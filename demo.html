@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Draggable Cards with S-shaped Connectable Nodes</title>
+		<style>
+			.draggable {
+				cursor: grab;
+			}
+
+			.node {
+				fill: green;
+
+				cursor: pointer;
+			}
+
+			.link {
+				stroke: black;
+				stroke-width: 2;
+			}
+
+			.card {
+				fill: lightgrey;
+				stroke: black;
+				stroke-width: 1;
+			}
+
+			text {
+				pointer-events: none;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="contextMenu"
+			style="display: none; position: absolute; z-index: 100; background: #f0f0f0; padding: 8px; border: 1px solid #d0d0d0;">
+			删除线条
+		</div>
+
+		<!-- <svg width="800" height="600" id="svgContainer"></svg> -->
+		<svg style="width: 100vw;height: 100vh;" id="svgContainer">
+			<g id="linksContainer"></g> <!-- 用于存放线条 -->
+			<g id="cardsContainer"></g> <!-- 用于存放卡片 -->
+		</svg>
+
+		<script>
+			let cards = [{
+					id: 'card1',
+					x: 100,
+					y: 200,
+					label: 'Card 1',
+					nodes: [{
+						type: "in",
+						index: 0
+					}, {
+						type: "out",
+						index: 0
+					}, {
+						type: "out",
+						index: 1
+					}]
+				},
+				{
+					id: 'card2',
+					x: 300,
+					y: 400,
+					label: 'Card 2',
+					nodes: [{
+						type: "in",
+						index: 0
+					}, {
+						type: "out",
+						index: 0
+					}]
+				},
+				{
+					id: 'card3',
+					x: 100,
+					y: 300,
+					label: 'Card 3',
+					nodes: [{
+						type: "in",
+						index: 0
+					}, {
+						type: "in",
+						index: 1
+					}, {
+						type: "out",
+						index: 0
+					}]
+				}
+			];
+
+			let links = [];
+			let currentLink = null;
+			let isDragging = false;
+			let isLinking = false;
+			let dragOffsetX, dragOffsetY;
+			let currentCard;
+
+			function init() {
+				drawLinks();
+				drawCards();
+
+				attachEventListeners();
+				generateRandomCardsAndLinks();
+			}
+
+			function drawCards() {
+				const cardsContainer = document.getElementById('cardsContainer');
+				cardsContainer.innerHTML = ''; // 清除现有的卡片
+
+				cards.forEach(card => {
+
+					// 计算卡片高度：节点间隔为50px，顶部和底部的边距为20px
+					const nodeSpacing = 50;
+					const topBottomPadding = 20;
+					const maxIndex = Math.max(...card.nodes.map(node => node.index)) + 1; // 最大列数
+					const cardHeight = maxIndex * nodeSpacing + topBottomPadding * 2; // 动态计算卡片高度
+
+					const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+					group.setAttribute('class', 'draggable card-container');
+					group.setAttribute('data-id', card.id);
+					group.setAttribute('transform', `translate(${card.x},${card.y})`);
+
+					const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+					rect.setAttribute('class', 'card');
+					rect.setAttribute('width', 150);
+					rect.setAttribute('height', cardHeight);
+					group.appendChild(rect);
+
+					const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+					text.setAttribute('x', 75);
+					text.setAttribute('y', topBottomPadding);
+					text.setAttribute('text-anchor', 'middle');
+					text.setAttribute('alignment-baseline', 'hanging');
+					text.textContent = card.label;
+					group.appendChild(text);
+
+					card.nodes.forEach((node, index) => {
+						const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+						circle.setAttribute('class', 'node');
+						circle.setAttribute('cx', node.type === "in" ? 0 : 150);
+						circle.setAttribute('cy', topBottomPadding + (node.index + 1) * nodeSpacing - (
+							nodeSpacing / 2));
+						circle.setAttribute('r', 7);
+						circle.setAttribute('data-card-id', card.id);
+						circle.setAttribute('data-node-id', `${card.id}-node${index + 1}`);
+						group.appendChild(circle);
+					});
+
+					// 绘制删除图标（正方形）
+					const deleteIcon = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+					deleteIcon.setAttribute('class', 'card-delete-icon');
+					deleteIcon.setAttribute('x', 130); // 调整以贴近卡片的右上角
+					deleteIcon.setAttribute('y', 0); // 调整以贴近卡片的右上角
+					deleteIcon.setAttribute('width', 20); // 设置为20x20大小
+					deleteIcon.setAttribute('height', 20);
+					deleteIcon.setAttribute('fill', 'red');
+					deleteIcon.setAttribute('data-card-id', card.id); // 用于标识该删除图标对应的卡片
+					deleteIcon.setAttribute('style', 'cursor: pointer;');
+					group.appendChild(deleteIcon);
+
+
+					const delText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+					delText.setAttribute('x', 140);
+					delText.setAttribute('y', 18); // 轻微调整以垂直居中
+					delText.setAttribute('text-anchor', 'middle');
+					delText.setAttribute('fill', 'white');
+					delText.setAttribute('font-size', '25px');
+					delText.setAttribute('pointer-events', 'none'); // 确保点击事件只触发于圆圈上
+					delText.textContent = '×';
+					group.appendChild(delText);
+
+					cardsContainer.appendChild(group);
+				});
+
+				attachNodeEventListeners();
+			}
+
+
+			function drawLinks() {
+				const linksContainer = document.getElementById('linksContainer');
+				linksContainer.innerHTML = ''; // 清除现有的线条
+				// 清除旧的删除图标
+				document.querySelectorAll('.delete-icon').forEach(icon => icon.remove());
+
+				links.forEach((link, index) => {
+					const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+					path.setAttribute('class', 'link');
+					path.setAttribute('fill', 'none');
+
+					// 根据源点和终点的X坐标差异动态计算控制点的距离
+					let dist;
+					if (link.source.x - link.target.x > 0) {
+						dist = 200; // 如果终点在源点的左侧，控制点距离更远
+					} else {
+						dist = Math.abs(link.target.x - link.source.x) * 0.3; // 否则，根据两点间的距离调整控制点距离
+					}
+
+					// 使用动态计算的控制点距离来定义曲线
+					const d =
+						`M${link.source.x} ${link.source.y} C${link.source.x + dist} ${link.source.y} ${link.target.x - dist} ${link.target.y} ${link.target.x} ${link.target.y}`;
+					path.setAttribute('d', d);
+					linksContainer.appendChild(path);
+
+					// 计算中点
+					const midX = (link.source.x + link.target.x) / 2;
+					const midY = (link.source.y + link.target.y) / 2;
+
+					// 绘制删除图标
+					const deleteIcon = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+					deleteIcon.setAttribute('class', 'delete-icon');
+					deleteIcon.setAttribute('cx', midX);
+					deleteIcon.setAttribute('cy', midY);
+					deleteIcon.setAttribute('style', "cursor: pointer;");
+					deleteIcon.setAttribute('r', 10);
+					deleteIcon.setAttribute('fill', 'red');
+					deleteIcon.setAttribute('data-link-index', index); // 用于标识该删除图标对应的线
+					linksContainer.appendChild(deleteIcon);
+
+					// 可以选择添加一个×文本在圆圈中间
+					const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+					text.setAttribute('x', midX);
+					text.setAttribute('y', midY + 5); // 轻微调整以垂直居中
+					text.setAttribute('text-anchor', 'middle');
+					text.setAttribute('fill', 'white');
+					text.setAttribute('font-size', '15px');
+					text.setAttribute('pointer-events', 'none'); // 确保点击事件只触发于圆圈上
+					text.textContent = '×';
+					linksContainer.appendChild(text);
+
+				});
+			}
+
+
+			function attachEventListeners() {
+				const svgContainer = document.getElementById('svgContainer');
+				document.querySelectorAll('.link').forEach(link => {
+					link.addEventListener('contextmenu', function(e) {
+						e.preventDefault(); // 阻止默认的右键菜单
+						const linkId = e.target.getAttribute('data-link-id'); // 确保你在绘制线条时添加了 data-link-id 属性
+						showContextMenu(e.clientX, e.clientY, linkId);
+					});
+				});
+				document.getElementById('svgContainer').addEventListener('click', function(e) {
+					if (e.target.classList.contains('delete-icon')) {
+						// 获取点击的删除图标对应的线的索引
+						const linkIndex = e.target.getAttribute('data-link-index');
+						// 从数组中移除该线
+						links.splice(linkIndex, 1);
+						// 重新绘制剩余的线和删除图标
+						drawLinks();
+						drawCards(); // 如果你的线条与卡片有关联，可能需要重新绘制卡片以更新视图
+					} else if (e.target.classList.contains('card-delete-icon')) {
+						// 获取点击的删除图标对应的卡片ID
+						const cardId = e.target.getAttribute('data-card-id');
+						// 从`cards`数组中移除对应的卡片
+						cards = cards.filter(card => card.id !== cardId);
+						// 同时移除所有与该卡片连接的线
+						links = links.filter(link => !(link.source.node.startsWith(cardId) || (link.target && link.target
+							.node.startsWith(cardId))));
+						// 重新绘制卡片和线
+						drawLinks();
+						drawCards();
+					} else {
+						let targetCardContainer = e.target.closest('.card-container');
+						if (targetCardContainer) {
+							const cardId = targetCardContainer.getAttribute('data-id');
+							// 将SVG元素移动到最后，使其在视觉上显示在最前面
+							targetCardContainer.parentNode.appendChild(targetCardContainer);
+
+							// 更新cards数组，将点击的卡片移动到数组的末尾
+							const cardIndex = cards.findIndex(card => card.id === cardId);
+							if (cardIndex > -1) {
+								const card = cards.splice(cardIndex, 1)[0];
+								cards.push(card);
+							}
+
+							// 这里不需要立即调用drawCards或drawLinks，
+							// 除非你需要根据cards数组的新顺序进行其他更新
+						}
+					}
+				});
+
+
+				svgContainer.addEventListener('mousedown', e => {
+					const target = e.target;
+					if (target
+
+						.classList.contains('card') || target.tagName === 'text') {
+						const cardContainer = target.closest('.card-container');
+						const cardId = cardContainer.getAttribute('data-id');
+						startDragCard(e, cardId);
+					}
+				});
+				document.addEventListener('mousemove', e => {
+					if (isDragging) {
+						moveCard(e);
+					} else if (isLinking && currentLink) {
+						updateLink(e);
+					}
+				});
+
+				document.addEventListener('mouseup', e => {
+					if (isDragging) {
+						endDragCard();
+					} else if (isLinking) {
+						endDragLink(e);
+					}
+				});
+			}
+
+			function startDragCard(e, cardId) {
+				isDragging = true;
+				const card = cards.find(c => c.id === cardId);
+				currentCard = card;
+
+				const svgRect = svgContainer.getBoundingClientRect();
+				dragOffsetX = e.clientX - svgRect.left - card.x;
+				dragOffsetY = e.clientY - svgRect.top - card.y;
+			}
+
+			// function moveCard(e) {
+			// 	const svgRect = svgContainer.getBoundingClientRect();
+			// 	currentCard.x = e.clientX - svgRect.left - dragOffsetX;
+			// 	currentCard.y = e.clientY - svgRect.top - dragOffsetY;
+
+			// 	// Update link positions associated with the currentCard
+			// 	links.forEach(link => {
+			// 		if (link.source.node.startsWith(currentCard.id)) {
+			// 			// If the current card is the source of the link
+			// 			link.source.x = currentCard.x + (link.source.node.includes('node1') ? 0 : 150);
+			// 			link.source.y = currentCard.y + 50; // Adjust based on your node's y position within the card
+			// 		}
+			// 		if (link.target && link.target.node.startsWith(currentCard.id)) {
+			// 			// If the current card is the target of the link
+			// 			link.target.x = currentCard.x + (link.target.node.includes('node1') ? 0 : 150);
+			// 			link.target.y = currentCard.y + 50; // Adjust based on your node's y position within the card
+			// 		}
+			// 	});
+
+			// 	drawLinks(); // Redraw links to reflect updated positions
+			// 	drawCards(); // Redraw cards and nodes
+			// }
+
+
+			function moveCard(e) {
+				const svgRect = svgContainer.getBoundingClientRect();
+				currentCard.x = e.clientX - svgRect.left - dragOffsetX;
+				currentCard.y = e.clientY - svgRect.top - dragOffsetY;
+
+				// Update link positions associated with the currentCard
+				links.forEach(link => {
+					if (link.source.node.startsWith(currentCard.id)) {
+						// 根据节点ID更新链接的源位置
+						const nodeIndex = parseInt(link.source.node.split('-node')[1]) - 1;
+						const nodeConfig = currentCard.nodes[nodeIndex]; // 获取当前节点的配置
+						const nodeSpacing = 50; // 节点间隔，应与drawCards函数中使用的相同
+						const topBottomPadding = 20; // 顶部和底部的边距，应与drawCards函数中使用的相同
+						link.source.x = currentCard.x + (nodeConfig.type === "in" ? 0 : 150); // 根据节点类型调整x坐标
+						link.source.y = currentCard.y + topBottomPadding + (nodeConfig.index + 1) * nodeSpacing - (
+							nodeSpacing / 2); // 根据节点的index调整y坐标
+					}
+					if (link.target && link.target.node.startsWith(currentCard.id)) {
+						// 根据节点ID更新链接的目标位置
+						const nodeIndex = parseInt(link.target.node.split('-node')[1]) - 1;
+						const nodeConfig = currentCard.nodes[nodeIndex]; // 获取当前节点的配置
+						link.target.x = currentCard.x + (nodeConfig.type === "in" ? 0 : 150); // 根据节点类型调整x坐标
+						link.target.y = currentCard.y + 20 + (nodeConfig.index + 1) * 50 - (
+							50 / 2); // 根据节点的index调整y坐标
+					}
+				});
+
+				drawLinks(); // Redraw links to reflect updated positions
+				drawCards(); // Redraw cards and nodes
+			}
+
+
+
+			function endDragCard() {
+				isDragging = false;
+			}
+
+			function startDragLink(e) {
+				e.stopPropagation(); // Prevent card drag
+				isLinking = true;
+				const nodeId = e.target.getAttribute('data-node-id');
+				const cardId = e.target.getAttribute('data-card-id');
+				const card = cards.find(c => c.id === cardId);
+				const node = e.target;
+
+				const svgRect = svgContainer.getBoundingClientRect();
+				const nodeX = e.clientX - svgRect.left;
+				const nodeY = e.clientY - svgRect.top;
+
+				currentLink = {
+					source: {
+						node: nodeId,
+						x: nodeX,
+						y: nodeY
+					},
+					target: null
+				};
+			}
+
+			function updateLink(e) {
+				const svgRect = svgContainer.getBoundingClientRect();
+				currentLink.target = {
+					x: e.clientX - svgRect.left,
+					y: e.clientY - svgRect.top
+				};
+				drawCurrentLink();
+			}
+
+			function endDragLink(e) {
+				isLinking = false;
+				const svgRect = svgContainer.getBoundingClientRect();
+				const x = e.clientX - svgRect.left;
+				const y = e.clientY - svgRect.top;
+
+				// 默认情况下，假设目标节点就是e.target
+				let targetNode = e.target;
+
+				// 检查e.target是否是我们期望的节点类型，如果不是，则尝试使用document.elementFromPoint
+				if (!targetNode.classList.contains('node')) {
+					// Temporarily hide the link to perform hit testing for the underlying node
+					e.target.style.display = 'none';
+
+					// Now attempt to find a target node at the same position
+					targetNode = document.elementFromPoint(e.clientX, e.clientY);
+
+					// Make sure to restore the visibility of the link after the test
+					e.target.style.display = '';
+				}
+
+				let validTargetFound = false;
+
+				// 进行节点的有效性判断
+				if (targetNode && targetNode.classList.contains('node')) {
+					const targetNodeId = targetNode.getAttribute('data-node-id');
+					// 确保目标节点不是起始节点自身，避免自连接
+					if (currentLink.source.node !== targetNodeId) {
+						validTargetFound = true;
+						// 更新连接的目标信息，并保存该连接
+						links.push({
+							...currentLink,
+							target: {
+								node: targetNodeId,
+								x: x,
+								y: y
+							}
+						});
+					}
+				}
+
+				// 移除临时绘制的连接线
+				const tempLink = document.querySelector('.temp-link');
+				if (tempLink) {
+					tempLink.remove();
+				}
+
+				// 重置当前连接
+				currentLink = null;
+
+				// 重新绘制所有有效连接
+				drawLinks();
+			}
+
+
+
+
+
+
+			// 更新drawCurrentLink函数，增加线宽
+			function drawCurrentLink() {
+				const tempLink = document.querySelector('.temp-link');
+				if (tempLink) tempLink.remove();
+
+				if (!currentLink || !currentLink.target) return;
+
+				const svgContainer = document.getElementById('svgContainer');
+				const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+				path.setAttribute('class', 'link temp-link');
+				// 设置等宽线属性
+				path.setAttribute('stroke-width', 4);
+				path.setAttribute('fill', 'none');
+				const d =
+					`M${currentLink.source.x},${currentLink.source.y} C${currentLink.source.x  + 100},${currentLink.source.y} ${currentLink.target.x  - 100},${currentLink.target.y} ${currentLink.target.x},${currentLink.target.y}`;
+				path.setAttribute('d', d);
+				svgContainer.appendChild(path);
+			}
+
+			function attachNodeEventListeners() {
+				document.querySelectorAll('.node').forEach(node => {
+					node.addEventListener('mousedown', startDragLink);
+				});
+			}
+
+			function generateRandomCardsAndLinks() {
+				// 使用SVG容器的动态尺寸
+				const svgWidth = document.getElementById('svgContainer').clientWidth;
+				const svgHeight = document.getElementById('svgContainer').clientHeight;
+
+				// 清空现有的卡片和连接
+				cards = [];
+				links = [];
+
+				// 生成50个随机卡片
+				for (let i = 0; i < 50; i++) {
+					const x = Math.random() * (svgWidth - 150); // 确保卡片在SVG容器内
+					const y = Math.random() * (svgHeight - 100); // 留出足够的空间以避免卡片超出边界
+					const inCount = Math.floor(Math.random() * 4) + 1; // 生成1到4之间的随机in节点数量
+					const outCount = Math.floor(Math.random() * 5) + 1; // 生成1到5之间的随机out节点数量
+					const nodes = [];
+
+					// 添加in节点
+					for (let j = 0; j < inCount; j++) {
+						nodes.push({
+							type: "in",
+							index: j
+						});
+					}
+
+					// 添加out节点
+					for (let j = 0; j < outCount; j++) {
+						nodes.push({
+							type: "out",
+							index: j
+						});
+					}
+
+					cards.push({
+						id: `card${i}`,
+						x: x,
+						y: y,
+						label: `Card ${i}`,
+						nodes: nodes
+					});
+				}
+
+				// 随机连接卡片，仅连接out到in
+				cards.forEach((card, index) => {
+					card.nodes.filter(node => node.type === "out").forEach(node => {
+						let targetCard;
+						let targetNode;
+						do {
+							// 随机选择一个卡片和其in节点作为目标
+							const targetCardIndex = Math.floor(Math.random() * 50);
+							targetCard = cards[targetCardIndex];
+							const targetInNodes = targetCard.nodes.filter(node => node.type === "in");
+							if (targetInNodes.length > 0) {
+								// 随机选择一个in节点
+								targetNode = targetInNodes[Math.floor(Math.random() * targetInNodes.length)];
+							}
+						} while (targetCard === card || !targetNode); // 确保不自连接且目标卡片有in节点
+
+						links.push({
+							source: {
+								node: `${card.id}-node${node.index + 1}`,
+								x: card.x + 150,
+								y: card.y + 35
+							}, // 假定out节点位于卡片的右侧
+							target: {
+								node: `${targetCard.id}-node${targetNode.index + 1}`,
+								x: targetCard.x,
+								y: targetCard.y + 35
+							} // 假定in节点位于卡片的左侧
+						});
+					});
+				});
+
+				drawLinks();
+				drawCards();
+			}
+
+
+
+			init();
+		</script>
+	</body>
+</html>
