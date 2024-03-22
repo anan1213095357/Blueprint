@@ -4,7 +4,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Draggable Cards with S-shaped Connectable Nodes</title>
+	<title>Blueprint</title>
 	<style>
 		body,
 		html {
@@ -69,35 +69,51 @@
 	<script>
 		let cards = [
 			{
+				id: 'card0',
+				x: 0,
+				y: 0,
+				label: 'Start',
+				type: "start",
+				nodes: [
+					{ type: "out", level: 0, enumType: 'call', color: '#fff' },
+				]
+			},
+			{
 				id: 'card1',
 				x: 100,
 				y: 200,
-				label: 'Card 1',
+				label: 'Condition',
+				type: "condition",
 				nodes: [
-					{ type: "in", level: 0, enumType: 'A', color: '#FFC600' },
-					{ type: "out", level: 0, enumType: 'A', color: '#FFC600' },
-					{ type: "out", level: 1, enumType: 'B', color: 'teal' }  // 绿色
+					{ type: "in", level: 0, enumType: 'call', color: '#fff' },
+					{ type: "in", level: 1, enumType: 'int', color: '#28C76F', slot: 'input', label: 'int' },
+					{ type: "in", level: 2, enumType: 'int', color: '#28C76F', slot: 'input', label: 'int' },
+					{ type: "out", level: 0, enumType: 'call', color: '#fff' },
+					{ type: "out", level: 1, enumType: 'bool', color: '#0396FF', label: 'bool' },
 				]
 			},
 			{
 				id: 'card2',
 				x: 300,
 				y: 400,
-				label: 'Card 2',
+				label: 'ToString',
+				type: "call",
 				nodes: [
-					{ type: "in", level: 0, enumType: 'B', color: 'teal' }, // 绿色
-					{ type: "out", level: 0, enumType: 'A', color: '#FFC600' }
+					{ type: "in", level: 0, enumType: 'call', color: '#fff' },
+					{ type: "in", level: 1, enumType: 'bool', color: '#0396FF', label: 'bool' },
+					{ type: "out", level: 0, enumType: 'call', color: '#fff' },
+					{ type: "out", level: 1, enumType: 'string', color: '#DE4313', label: 'string' }
 				]
 			},
 			{
 				id: 'card3',
 				x: 100,
 				y: 300,
-				label: 'Card 3',
+				label: 'Print',
+				type: "print",
 				nodes: [
-					{ type: "in", level: 0, enumType: 'A', color: '#FFC600' }, // 红色
-					{ type: "in", level: 1, enumType: 'B', color: 'teal' }, // 绿色
-					{ type: "out", level: 0, enumType: 'B', color: 'teal' }  // 绿色
+					{ type: "in", level: 0, enumType: 'call', color: '#fff' },
+					{ type: "in", level: 1, enumType: 'string', color: '#DE4313', label: 'string' }
 				]
 			}
 		];
@@ -113,15 +129,13 @@
 		function init() {
 			drawLinks();
 			drawCards();
-
 			attachEventListeners();
-			//generateRandomCardsAndLinks();
 		}
 
 		function drawCards() {
 			const cardsContainer = document.getElementById('cardsContainer');
 			cardsContainer.innerHTML = ''; // 清除现有的卡片
-			
+
 
 			//创建标题栏渐变色
 			const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
@@ -193,7 +207,7 @@
 				group.appendChild(titleBar);
 
 				const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-				text.setAttribute('x', 30);
+				text.setAttribute('x', titleBarWidth / 2);
 				text.setAttribute('y', titleBarHeight / 2);
 				text.setAttribute('text-anchor', 'middle');
 				text.setAttribute('alignment-baseline', 'middle');
@@ -201,15 +215,105 @@
 				group.appendChild(text);
 
 				card.nodes.forEach((node, index) => {
+
+
 					const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
 					circle.setAttribute('class', 'node');
-					circle.setAttribute('cx', node.type === "in" ? 0 : 150);
+					circle.setAttribute('cx', node.type === 'in' ? 0 : 150);
 					circle.setAttribute('cy', topBottomPadding + titleBarHeight + (node.level + 1) * nodeSpacing - (nodeSpacing / 2));
 					circle.setAttribute('r', 7);
 					circle.setAttribute('fill', node.color);
 					circle.setAttribute('data-card-id', card.id);
 					circle.setAttribute('data-node-id', `${card.id}-node${index + 1}`);
 					group.appendChild(circle);
+
+
+
+					if (node.label != undefined) {
+						// 计算文本标签的位置
+						let labelX = node.type === 'in' ? 15 : 135; // 基本的X坐标
+						const labelY = topBottomPadding + titleBarHeight + node.level * nodeSpacing + 40;
+
+						// 创建SVG文本元素
+						const nodeLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+						nodeLabel.setAttribute('x', labelX);
+						nodeLabel.setAttribute('y', labelY); // 在节点下方留出一定空间
+						nodeLabel.setAttribute('text-anchor', 'middle'); // 文本居中对齐
+						nodeLabel.setAttribute('fill', '#aaa'); // 文本居中对齐
+						nodeLabel.setAttribute('alignment-baseline', 'hanging');
+						nodeLabel.textContent = node.label;
+
+						// 计算文本的宽度（假定的，因为SVG没有直接获取文本宽度的方法）
+						const estimatedTextLength = node.label.length *10; // 估算每个字符6像素宽
+
+						// 确保文本不会超出卡片右边界
+						if (labelX + estimatedTextLength / 2 > 150) {
+							labelX = 150 - estimatedTextLength / 2;
+							nodeLabel.setAttribute('x', labelX);
+						}
+
+						// 确保文本不会超出卡片左边界
+						if (labelX - estimatedTextLength / 2 < 0) {
+							labelX = estimatedTextLength / 2;
+							nodeLabel.setAttribute('x', labelX);
+						}
+
+						group.appendChild(nodeLabel);
+
+					}
+
+					switch (node.slot) {
+						case 'input':
+							const foreignObject = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
+							foreignObject.setAttribute('x', 0);
+							foreignObject.setAttribute('y', topBottomPadding + titleBarHeight + node.level * nodeSpacing + 12);
+							foreignObject.setAttribute('width', 130); // 保持原始宽度
+							foreignObject.setAttribute('height', nodeSpacing - 24); // 保持原始高度，减去的24像素为上下内边距之和
+							const input = document.createElement('input');
+							input.type = 'text';
+
+							// Set adjusted input styles
+							input.style.width = '110px';
+							input.style.height = '100%';
+							input.style.marginLeft = '20px';
+							input.style.borderRadius = '5px';
+							input.style.border = '1px solid white';
+							input.style.backgroundColor = '#222';
+							input.style.color = 'white';
+							input.style.fontSize = '1em';
+							input.style.padding = '0px'; // 可能需要调整或去除内边距以适应固定尺寸
+							input.style.boxSizing = 'border-box'; // 确保宽高包含内容、内边距和边框
+
+							// Change border color on focus and blur
+							input.addEventListener('focus', () => {
+								input.style.outline = 'none'; // Remove default focus outline
+								input.style.borderColor = 'white'; // Keep border color white on focus
+							});
+
+							input.addEventListener('blur', () => {
+								input.style.borderColor = 'white'; // Revert to white when not focused
+							});
+
+							// 阻止事件冒泡
+							input.addEventListener('click', function (event) {
+								event.stopPropagation();
+							});
+
+							input.addEventListener('mousedown', function (event) {
+								event.stopPropagation();
+							});
+
+							input.addEventListener('touchstart', function (event) {
+								event.stopPropagation();
+							});
+
+							foreignObject.appendChild(input);
+							group.appendChild(foreignObject);
+							break;
+					}
+
+
+
 				});
 
 				const deleteIcon = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
@@ -553,92 +657,6 @@
 				node.addEventListener('mousedown', startDragLink);
 			});
 		}
-
-		function generateRandomCardsAndLinks() {
-			const enumTypes = ['TypeA', 'TypeB', 'TypeC', 'TypeD', 'TypeE'];
-
-			// 使用SVG容器的动态尺寸
-			const svgWidth = document.getElementById('svgContainer').clientWidth;
-			const svgHeight = document.getElementById('svgContainer').clientHeight;
-
-			// 清空现有的卡片和连接
-			cards = [];
-			links = [];
-
-			// 生成50个随机卡片
-			for (let i = 0; i < 50; i++) {
-				const x = Math.random() * (svgWidth - 150); // 确保卡片在SVG容器内
-				const y = Math.random() * (svgHeight - 100); // 留出足够的空间以避免卡片超出边界
-				const inCount = Math.floor(Math.random() * 4) + 1; // 生成1到4之间的随机in节点数量
-				const outCount = Math.floor(Math.random() * 5) + 1; // 生成1到5之间的随机out节点数量
-				const nodes = [];
-
-				// 添加in节点
-				for (let j = 0; j < inCount; j++) {
-					const randomEnumType = enumTypes[Math.floor(Math.random() * enumTypes.length)]; // 随机枚举类型
-					nodes.push({
-						type: "in",
-						level: j,
-						enumType: randomEnumType // 分配枚举类型
-					});
-				}
-
-				// 添加out节点
-				for (let j = 0; j < outCount; j++) {
-					const randomEnumType = enumTypes[Math.floor(Math.random() * enumTypes.length)]; // 随机枚举类型
-					nodes.push({
-						type: "out",
-						level: j,
-						enumType: randomEnumType // 分配枚举类型
-					});
-				}
-
-
-				cards.push({
-					id: `card${i}`,
-					x: x,
-					y: y,
-					label: `Card ${i}`,
-					nodes: nodes
-				});
-			}
-
-			// 随机连接卡片，仅连接out到in
-			cards.forEach((card, index) => {
-				card.nodes.filter(node => node.type === "out").forEach(node => {
-					let targetCard;
-					let targetNode;
-					do {
-						// 随机选择一个卡片和其in节点作为目标
-						const targetCardIndex = Math.floor(Math.random() * 50);
-						targetCard = cards[targetCardIndex];
-						const targetInNodes = targetCard.nodes.filter(node => node.type === "in");
-						if (targetInNodes.length > 0) {
-							// 随机选择一个in节点
-							targetNode = targetInNodes[Math.floor(Math.random() * targetInNodes.length)];
-						}
-					} while (targetCard === card || !targetNode); // 确保不自连接且目标卡片有in节点
-
-					links.push({
-						source: {
-							node: `${card.id}-node${node.level + 1}`,
-							x: card.x + 150,
-							y: card.y + 35
-						}, // 假定out节点位于卡片的右侧
-						target: {
-							node: `${targetCard.id}-node${targetNode.level + 1}`,
-							x: targetCard.x,
-							y: targetCard.y + 35
-						} // 假定in节点位于卡片的左侧
-					});
-				});
-			});
-
-			drawLinks();
-			drawCards();
-		}
-
-
 
 		init();
 	</script>
