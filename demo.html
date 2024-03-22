@@ -6,6 +6,31 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Draggable Cards with S-shaped Connectable Nodes</title>
 	<style>
+		body,
+		html {
+			margin: 0;
+			padding: 0;
+			width: 100%;
+			height: 100%;
+			overflow: hidden;
+		}
+
+		.grid-background {
+			background-color: #292929;
+			background-image:
+				linear-gradient(to right, black 1px, transparent 1px),
+				linear-gradient(to bottom, black 1px, transparent 1px),
+				linear-gradient(to right, #404040 1px, transparent 1px),
+				linear-gradient(to bottom, #404040 1px, transparent 1px);
+			background-size:
+				100px 100px,
+				100px 100px,
+				10px 10px,
+				10px 10px;
+			width: 100%;
+			height: 100%;
+		}
+
 		.draggable {
 			cursor: grab;
 		}
@@ -21,20 +46,22 @@
 		}
 
 		.card {
-			fill: lightgrey;
-			stroke: black;
+			/* fill: lightgrey;
+			stroke: black; */
 			stroke-width: 1;
+			user-select: none;
 		}
 
 		text {
 			pointer-events: none;
+			user-select: none;
 		}
 	</style>
 </head>
 
 <body>
 
-	<svg style="width: 100vw;height: 100vh;" id="svgContainer">
+	<svg style="width: 100%;height: 100%;" id="svgContainer" class="grid-background">
 		<g id="linksContainer"></g> <!-- 用于存放线条 -->
 		<g id="cardsContainer"></g> <!-- 用于存放卡片 -->
 	</svg>
@@ -47,9 +74,9 @@
 				y: 200,
 				label: 'Card 1',
 				nodes: [
-					{ type: "in", index: 0, enumType: 'A', color: 'blue' },
-					{ type: "out", index: 0, enumType: 'A', color: 'blue' },
-					{ type: "out", index: 1, enumType: 'B', color: 'teal' }  // 绿色
+					{ type: "in", level: 0, enumType: 'A', color: '#FFC600' },
+					{ type: "out", level: 0, enumType: 'A', color: '#FFC600' },
+					{ type: "out", level: 1, enumType: 'B', color: 'teal' }  // 绿色
 				]
 			},
 			{
@@ -58,8 +85,8 @@
 				y: 400,
 				label: 'Card 2',
 				nodes: [
-					{ type: "in", index: 0, enumType: 'B', color: 'teal' }, // 绿色
-					{ type: "out", index: 0, enumType: 'A', color: 'blue' }
+					{ type: "in", level: 0, enumType: 'B', color: 'teal' }, // 绿色
+					{ type: "out", level: 0, enumType: 'A', color: '#FFC600' }
 				]
 			},
 			{
@@ -68,9 +95,9 @@
 				y: 300,
 				label: 'Card 3',
 				nodes: [
-					{ type: "in", index: 0, enumType: 'A', color: 'blue' }, // 红色
-					{ type: "in", index: 1, enumType: 'B', color: 'teal' }, // 绿色
-					{ type: "out", index: 0, enumType: 'B', color: 'teal' }  // 绿色
+					{ type: "in", level: 0, enumType: 'A', color: '#FFC600' }, // 红色
+					{ type: "in", level: 1, enumType: 'B', color: 'teal' }, // 绿色
+					{ type: "out", level: 0, enumType: 'B', color: 'teal' }  // 绿色
 				]
 			}
 		];
@@ -94,31 +121,82 @@
 		function drawCards() {
 			const cardsContainer = document.getElementById('cardsContainer');
 			cardsContainer.innerHTML = ''; // 清除现有的卡片
+			
+
+			//创建标题栏渐变色
+			const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+			const linearGradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+			linearGradient.setAttribute('id', 'titleGradient');
+			linearGradient.setAttribute('x1', '0%'); // 渐变起点的x坐标
+			linearGradient.setAttribute('y1', '100%'); // 渐变起点的y坐标
+			linearGradient.setAttribute('x2', '100%'); // 渐变终点的x坐标
+			linearGradient.setAttribute('y2', '0%'); // 渐变终点的y坐标
+
+			const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+			stop1.setAttribute('offset', '10%');
+			stop1.setAttribute('style', 'stop-color: #3C8CE7; stop-opacity: 1');
+			linearGradient.appendChild(stop1);
+
+			const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+			stop2.setAttribute('offset', '100%');
+			stop2.setAttribute('style', 'stop-color: #00EAFF; stop-opacity: 1');
+			linearGradient.appendChild(stop2);
+
+			defs.appendChild(linearGradient);
+			cardsContainer.appendChild(defs);
+
+
+
+
+
 
 			cards.forEach(card => {
-
-				// 计算卡片高度：节点间隔为50px，顶部和底部的边距为20px
 				const nodeSpacing = 50;
 				const topBottomPadding = 20;
-				const maxIndex = Math.max(...card.nodes.map(node => node.index)) + 1; // 最大列数
-				const cardHeight = maxIndex * nodeSpacing + topBottomPadding * 2; // 动态计算卡片高度
+				const titleBarHeight = 30; // 标题栏高度
+				const maxLevel = Math.max(...card.nodes.map(node => node.level)) + 1;
+				const cardHeight = maxLevel * nodeSpacing + topBottomPadding * 2 + titleBarHeight;
 
 				const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
 				group.setAttribute('class', 'draggable card-container');
 				group.setAttribute('data-id', card.id);
+				group.setAttribute('user-select', 'none');
 				group.setAttribute('transform', `translate(${card.x},${card.y})`);
 
+
+
+
+
 				const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-				rect.setAttribute('class', 'card');
+				rect.setAttribute('fill', '#222');
 				rect.setAttribute('width', 150);
 				rect.setAttribute('height', cardHeight);
+				rect.setAttribute('rx', 10); // 圆角
+				rect.setAttribute('ry', 10);
 				group.appendChild(rect);
 
+				// 使用path绘制带有指定圆角的矩形
+				// 创建标题栏
+				const titleBarWidth = 150;
+				const borderRadius = 10; // 圆角大小
+				const titleBar = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+				const dValue = `M 0,${borderRadius}
+                a ${borderRadius},${borderRadius} 0 0 1 ${borderRadius},-${borderRadius}
+                h ${titleBarWidth - borderRadius * 2}
+                a ${borderRadius},${borderRadius} 0 0 1 ${borderRadius},${borderRadius}
+                v ${titleBarHeight - borderRadius}
+                h -${titleBarWidth}
+                z`;
+				titleBar.setAttribute('class', 'card');
+				titleBar.setAttribute('d', dValue);
+				titleBar.setAttribute('fill', 'url(#titleGradient)');
+				group.appendChild(titleBar);
+
 				const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-				text.setAttribute('x', 75);
-				text.setAttribute('y', topBottomPadding);
+				text.setAttribute('x', 30);
+				text.setAttribute('y', titleBarHeight / 2);
 				text.setAttribute('text-anchor', 'middle');
-				text.setAttribute('alignment-baseline', 'hanging');
+				text.setAttribute('alignment-baseline', 'middle');
 				text.textContent = card.label;
 				group.appendChild(text);
 
@@ -126,7 +204,7 @@
 					const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
 					circle.setAttribute('class', 'node');
 					circle.setAttribute('cx', node.type === "in" ? 0 : 150);
-					circle.setAttribute('cy', topBottomPadding + (node.index + 1) * nodeSpacing - (nodeSpacing / 2));
+					circle.setAttribute('cy', topBottomPadding + titleBarHeight + (node.level + 1) * nodeSpacing - (nodeSpacing / 2));
 					circle.setAttribute('r', 7);
 					circle.setAttribute('fill', node.color);
 					circle.setAttribute('data-card-id', card.id);
@@ -134,26 +212,24 @@
 					group.appendChild(circle);
 				});
 
-				// 绘制删除图标（正方形）
 				const deleteIcon = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
 				deleteIcon.setAttribute('class', 'card-delete-icon');
-				deleteIcon.setAttribute('x', 130); // 调整以贴近卡片的右上角
-				deleteIcon.setAttribute('y', 0); // 调整以贴近卡片的右上角
-				deleteIcon.setAttribute('width', 20); // 设置为20x20大小
+				deleteIcon.setAttribute('x', 125);
+				deleteIcon.setAttribute('y', 5); // 使其贴近标题栏的右上角
+				deleteIcon.setAttribute('width', 20);
 				deleteIcon.setAttribute('height', 20);
 				deleteIcon.setAttribute('fill', 'red');
-				deleteIcon.setAttribute('data-card-id', card.id); // 用于标识该删除图标对应的卡片
+				deleteIcon.setAttribute('data-card-id', card.id);
 				deleteIcon.setAttribute('style', 'cursor: pointer;');
 				group.appendChild(deleteIcon);
 
-
 				const delText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-				delText.setAttribute('x', 140);
-				delText.setAttribute('y', 18); // 轻微调整以垂直居中
+				delText.setAttribute('x', 135);
+				delText.setAttribute('y', 20); // 调整位置以垂直居中
 				delText.setAttribute('text-anchor', 'middle');
 				delText.setAttribute('fill', 'white');
-				delText.setAttribute('font-size', '25px');
-				delText.setAttribute('pointer-events', 'none'); // 确保点击事件只触发于圆圈上
+				delText.setAttribute('font-size', '16px'); // 适当调整字体大小以适应图标
+				delText.setAttribute('pointer-events', 'none'); // 确保点击事件只触发于删除图标上
 				delText.textContent = '×';
 				group.appendChild(delText);
 
@@ -162,6 +238,7 @@
 
 			attachNodeEventListeners();
 		}
+
 
 
 		function drawLinks() {
@@ -203,7 +280,7 @@
 				deleteIcon.setAttribute('style', "cursor: pointer;");
 				deleteIcon.setAttribute('r', 10);
 				deleteIcon.setAttribute('fill', 'red');
-				deleteIcon.setAttribute('data-link-index', index); // 用于标识该删除图标对应的线
+				deleteIcon.setAttribute('data-link-level', index); // 用于标识该删除图标对应的线
 				linksContainer.appendChild(deleteIcon);
 
 				// 可以选择添加一个×文本在圆圈中间
@@ -233,7 +310,7 @@
 			document.getElementById('svgContainer').addEventListener('click', function (e) {
 				if (e.target.classList.contains('delete-icon')) {
 					// 获取点击的删除图标对应的线的索引
-					const linkIndex = e.target.getAttribute('data-link-index');
+					const linkIndex = e.target.getAttribute('data-link-level');
 					// 从数组中移除该线
 					links.splice(linkIndex, 1);
 					// 重新绘制剩余的线和删除图标
@@ -322,16 +399,14 @@
 					const nodeSpacing = 50; // 节点间隔，应与drawCards函数中使用的相同
 					const topBottomPadding = 20; // 顶部和底部的边距，应与drawCards函数中使用的相同
 					link.source.x = currentCard.x + (nodeConfig.type === "in" ? 0 : 150); // 根据节点类型调整x坐标
-					link.source.y = currentCard.y + topBottomPadding + (nodeConfig.index + 1) * nodeSpacing - (
-						nodeSpacing / 2); // 根据节点的index调整y坐标
+					link.source.y = 30 + currentCard.y + topBottomPadding + (nodeConfig.level + 1) * nodeSpacing - (nodeSpacing / 2); // 根据节点的index调整y坐标
 				}
 				if (link.target && link.target.node.startsWith(currentCard.id)) {
 					// 根据节点ID更新链接的目标位置
 					const nodeIndex = parseInt(link.target.node.split('-node')[1]) - 1;
 					const nodeConfig = currentCard.nodes[nodeIndex]; // 获取当前节点的配置
 					link.target.x = currentCard.x + (nodeConfig.type === "in" ? 0 : 150); // 根据节点类型调整x坐标
-					link.target.y = currentCard.y + 20 + (nodeConfig.index + 1) * 50 - (
-						50 / 2); // 根据节点的index调整y坐标
+					link.target.y = 30 + currentCard.y + 20 + (nodeConfig.level + 1) * 50 - (50 / 2); // 根据节点的index调整y坐标
 				}
 			});
 
@@ -361,7 +436,8 @@
 				source: {
 					node: nodeId,
 					x: nodeX,
-					y: nodeY
+					y: nodeY,
+					color: node.getAttribute('fill')
 				},
 				target: null
 			};
@@ -460,9 +536,11 @@
 
 			const svgContainer = document.getElementById('svgContainer');
 			const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-			path.setAttribute('class', 'link temp-link');
+			path.setAttribute('class', 'temp-link');
 			// 设置等宽线属性
-			path.setAttribute('stroke-width', 4);
+			path.setAttribute('stroke', currentLink.source.color)
+			path.setAttribute('stroke-width', 5)
+
 			path.setAttribute('fill', 'none');
 			const d =
 				`M${currentLink.source.x},${currentLink.source.y} C${currentLink.source.x + 100},${currentLink.source.y} ${currentLink.target.x - 100},${currentLink.target.y} ${currentLink.target.x},${currentLink.target.y}`;
@@ -500,7 +578,7 @@
 					const randomEnumType = enumTypes[Math.floor(Math.random() * enumTypes.length)]; // 随机枚举类型
 					nodes.push({
 						type: "in",
-						index: j,
+						level: j,
 						enumType: randomEnumType // 分配枚举类型
 					});
 				}
@@ -510,7 +588,7 @@
 					const randomEnumType = enumTypes[Math.floor(Math.random() * enumTypes.length)]; // 随机枚举类型
 					nodes.push({
 						type: "out",
-						index: j,
+						level: j,
 						enumType: randomEnumType // 分配枚举类型
 					});
 				}
@@ -543,12 +621,12 @@
 
 					links.push({
 						source: {
-							node: `${card.id}-node${node.index + 1}`,
+							node: `${card.id}-node${node.level + 1}`,
 							x: card.x + 150,
 							y: card.y + 35
 						}, // 假定out节点位于卡片的右侧
 						target: {
-							node: `${targetCard.id}-node${targetNode.index + 1}`,
+							node: `${targetCard.id}-node${targetNode.level + 1}`,
 							x: targetCard.x,
 							y: targetCard.y + 35
 						} // 假定in节点位于卡片的左侧
