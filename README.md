@@ -2,7 +2,7 @@ Welcome to our open-source project, a dynamic and visually captivating SVG-based
 
 Key Features:
 
-    Interactive SVG Elements: Leverage the power of SVG to create responsive and attractive diagrams. Our tool supports a wide range of SVG elements, including cards, links, and customizable nodes, all with sleek animations and gradients.
+**Interactive SVG Elements:** Leverage the power of SVG to create responsive and attractive diagrams. Our tool supports a wide range of SVG elements, including cards, links, and customizable nodes, all with sleek animations and gradients.
     
     Customizable Components: Dive into a rich set of components including start points, conditions, operations, and output nodes, each designed to represent different aspects of a workflow or algorithm. Users can easily modify these components to suit their specific needs.
     
