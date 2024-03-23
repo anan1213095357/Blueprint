@@ -4,7 +4,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Draggable Cards with S-shaped Connectable Nodes</title>
+	<title>Blueprint</title>
 	<style>
 		body,
 		html {
@@ -69,36 +69,58 @@
 	<script>
 		let cards = [
 			{
+				id: 'card0',
+				x: 0,
+				y: 0,
+				label: 'Start',
+				type: "start",
+				nodes: [
+					{ type: "out", level: 0, enumType: 'call', color: '#fff' },
+				],
+				titleBarColor: ['#84fab0', '#8fd3f4']
+			},
+			{
 				id: 'card1',
 				x: 100,
 				y: 200,
-				label: 'Card 1',
+				label: 'Condition',
+				type: "condition",
 				nodes: [
-					{ type: "in", level: 0, enumType: 'A', color: '#FFC600' },
-					{ type: "out", level: 0, enumType: 'A', color: '#FFC600' },
-					{ type: "out", level: 1, enumType: 'B', color: 'teal' }  // 绿色
+					{ type: "in", level: 0, enumType: 'call', color: '#fff' },
+					{ type: "in", level: 1, enumType: 'int', color: '#28C76F', slot: 'input', label: 'int' },
+					{ type: "in", level: 2, enumType: 'int', color: '#28C76F', slot: 'input', label: 'int' },
+					{ type: "out", level: 0, enumType: 'call', color: '#fff' },
+					{ type: "out", level: 1, enumType: 'bool', color: '#0396FF', label: 'bool' },
 				]
+				,
+				titleBarColor: ['#fccb90', '#d57eeb']
 			},
 			{
 				id: 'card2',
 				x: 300,
 				y: 400,
-				label: 'Card 2',
+				label: 'ToString',
+				type: "call",
 				nodes: [
-					{ type: "in", level: 0, enumType: 'B', color: 'teal' }, // 绿色
-					{ type: "out", level: 0, enumType: 'A', color: '#FFC600' }
-				]
+					{ type: "in", level: 0, enumType: 'call', color: '#fff' },
+					{ type: "in", level: 1, enumType: 'bool', color: '#0396FF', label: 'bool' },
+					{ type: "out", level: 0, enumType: 'call', color: '#fff' },
+					{ type: "out", level: 1, enumType: 'string', color: '#DE4313', label: 'string' }
+				],
+				titleBarColor: ['#3C8CE7', '#00EAFF']
+
 			},
 			{
 				id: 'card3',
 				x: 100,
 				y: 300,
-				label: 'Card 3',
+				label: 'Print',
+				type: "print",
 				nodes: [
-					{ type: "in", level: 0, enumType: 'A', color: '#FFC600' }, // 红色
-					{ type: "in", level: 1, enumType: 'B', color: 'teal' }, // 绿色
-					{ type: "out", level: 0, enumType: 'B', color: 'teal' }  // 绿色
-				]
+					{ type: "in", level: 0, enumType: 'call', color: '#fff' },
+					{ type: "in", level: 1, enumType: 'string', color: '#DE4313', label: 'string' }
+				],
+				titleBarColor: ['#f6d365', '#fda085']
 			}
 		];
 
@@ -113,37 +135,15 @@
 		function init() {
 			drawLinks();
 			drawCards();
-
 			attachEventListeners();
-			//generateRandomCardsAndLinks();
 		}
 
 		function drawCards() {
 			const cardsContainer = document.getElementById('cardsContainer');
 			cardsContainer.innerHTML = ''; // 清除现有的卡片
-			
 
-			//创建标题栏渐变色
-			const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-			const linearGradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
-			linearGradient.setAttribute('id', 'titleGradient');
-			linearGradient.setAttribute('x1', '0%'); // 渐变起点的x坐标
-			linearGradient.setAttribute('y1', '100%'); // 渐变起点的y坐标
-			linearGradient.setAttribute('x2', '100%'); // 渐变终点的x坐标
-			linearGradient.setAttribute('y2', '0%'); // 渐变终点的y坐标
 
-			const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
-			stop1.setAttribute('offset', '10%');
-			stop1.setAttribute('style', 'stop-color: #3C8CE7; stop-opacity: 1');
-			linearGradient.appendChild(stop1);
 
-			const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
-			stop2.setAttribute('offset', '100%');
-			stop2.setAttribute('style', 'stop-color: #00EAFF; stop-opacity: 1');
-			linearGradient.appendChild(stop2);
-
-			defs.appendChild(linearGradient);
-			cardsContainer.appendChild(defs);
 
 
 
@@ -151,6 +151,31 @@
 
 
 			cards.forEach(card => {
+
+				//创建标题栏渐变色
+				const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+				const linearGradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+				linearGradient.setAttribute('id', `titleGradient-${card.id}`);
+				linearGradient.setAttribute('x1', '0%'); // 渐变起点的x坐标
+				linearGradient.setAttribute('y1', '100%'); // 渐变起点的y坐标
+				linearGradient.setAttribute('x2', '100%'); // 渐变终点的x坐标
+				linearGradient.setAttribute('y2', '0%'); // 渐变终点的y坐标
+
+				const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+				stop1.setAttribute('offset', '10%');
+				stop1.setAttribute('style', `stop-color: ${card.titleBarColor[0]}; stop-opacity: 1`);
+				linearGradient.appendChild(stop1);
+
+				const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+				stop2.setAttribute('offset', '100%');
+				stop2.setAttribute('style', `stop-color: ${card.titleBarColor[1]}; stop-opacity: 1`);
+				linearGradient.appendChild(stop2);
+
+				defs.appendChild(linearGradient);
+				cardsContainer.appendChild(defs);
+
+
+
 				const nodeSpacing = 50;
 				const topBottomPadding = 20;
 				const titleBarHeight = 30; // 标题栏高度
@@ -189,11 +214,11 @@
                 z`;
 				titleBar.setAttribute('class', 'card');
 				titleBar.setAttribute('d', dValue);
-				titleBar.setAttribute('fill', 'url(#titleGradient)');
+				titleBar.setAttribute('fill', `url(#titleGradient-${card.id})`);
 				group.appendChild(titleBar);
 
 				const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-				text.setAttribute('x', 30);
+				text.setAttribute('x', titleBarWidth / 2);
 				text.setAttribute('y', titleBarHeight / 2);
 				text.setAttribute('text-anchor', 'middle');
 				text.setAttribute('alignment-baseline', 'middle');
@@ -201,15 +226,108 @@
 				group.appendChild(text);
 
 				card.nodes.forEach((node, index) => {
+
+
 					const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
 					circle.setAttribute('class', 'node');
-					circle.setAttribute('cx', node.type === "in" ? 0 : 150);
+					circle.setAttribute('cx', node.type === 'in' ? 0 : 150);
 					circle.setAttribute('cy', topBottomPadding + titleBarHeight + (node.level + 1) * nodeSpacing - (nodeSpacing / 2));
 					circle.setAttribute('r', 7);
 					circle.setAttribute('fill', node.color);
 					circle.setAttribute('data-card-id', card.id);
 					circle.setAttribute('data-node-id', `${card.id}-node${index + 1}`);
 					group.appendChild(circle);
+
+
+
+					if (node.label != undefined) {
+						// 计算文本标签的位置
+						let labelX = node.type === 'in' ? 15 : 135; // 基本的X坐标
+						const labelY = topBottomPadding + titleBarHeight + node.level * nodeSpacing + 40;
+
+						// 创建SVG文本元素
+						const nodeLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+						nodeLabel.setAttribute('x', labelX);
+						nodeLabel.setAttribute('y', labelY); // 在节点下方留出一定空间
+						nodeLabel.setAttribute('text-anchor', 'middle'); // 文本居中对齐
+						nodeLabel.setAttribute('fill', '#aaa'); // 文本居中对齐
+						nodeLabel.setAttribute('alignment-baseline', 'hanging');
+						nodeLabel.textContent = node.label;
+
+						// 计算文本的宽度（假定的，因为SVG没有直接获取文本宽度的方法）
+						const estimatedTextLength = node.label.length * 10; // 估算每个字符6像素宽
+
+						// 确保文本不会超出卡片右边界
+						if (labelX + estimatedTextLength / 2 > 150) {
+							labelX = 150 - estimatedTextLength / 2;
+							nodeLabel.setAttribute('x', labelX);
+						}
+
+						// 确保文本不会超出卡片左边界
+						if (labelX - estimatedTextLength / 2 < 0) {
+							labelX = estimatedTextLength / 2;
+							nodeLabel.setAttribute('x', labelX);
+						}
+
+						group.appendChild(nodeLabel);
+
+					}
+
+					switch (node.slot) {
+						case 'input':
+							const foreignObject = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
+							foreignObject.setAttribute('x', 0);
+							foreignObject.setAttribute('y', topBottomPadding + titleBarHeight + node.level * nodeSpacing + 12);
+							foreignObject.setAttribute('width', 130); // 保持原始宽度
+							foreignObject.setAttribute('height', nodeSpacing - 24); // 保持原始高度，减去的24像素为上下内边距之和
+							const input = document.createElement('input');
+							input.type = 'text';
+							input.value = node.value;
+							input.addEventListener('input', function () {
+								node.value = input.value;
+							});
+							// Set adjusted input styles
+							input.style.width = '110px';
+							input.style.height = '100%';
+							input.style.marginLeft = '20px';
+							input.style.borderRadius = '5px';
+							input.style.border = '1px solid white';
+							input.style.backgroundColor = '#222';
+							input.style.color = 'white';
+							input.style.fontSize = '1em';
+							input.style.padding = '0px'; // 可能需要调整或去除内边距以适应固定尺寸
+							input.style.boxSizing = 'border-box'; // 确保宽高包含内容、内边距和边框
+
+							// Change border color on focus and blur
+							input.addEventListener('focus', () => {
+								input.style.outline = 'none'; // Remove default focus outline
+								input.style.borderColor = 'white'; // Keep border color white on focus
+							});
+
+							input.addEventListener('blur', () => {
+								input.style.borderColor = 'white'; // Revert to white when not focused
+							});
+
+							// 阻止事件冒泡
+							input.addEventListener('click', function (event) {
+								event.stopPropagation();
+							});
+
+							input.addEventListener('mousedown', function (event) {
+								event.stopPropagation();
+							});
+
+							input.addEventListener('touchstart', function (event) {
+								event.stopPropagation();
+							});
+
+							foreignObject.appendChild(input);
+							group.appendChild(foreignObject);
+							break;
+					}
+
+
+
 				});
 
 				const deleteIcon = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
@@ -218,7 +336,7 @@
 				deleteIcon.setAttribute('y', 5); // 使其贴近标题栏的右上角
 				deleteIcon.setAttribute('width', 20);
 				deleteIcon.setAttribute('height', 20);
-				deleteIcon.setAttribute('fill', 'red');
+				deleteIcon.setAttribute('fill', 'transparent');
 				deleteIcon.setAttribute('data-card-id', card.id);
 				deleteIcon.setAttribute('style', 'cursor: pointer;');
 				group.appendChild(deleteIcon);
@@ -253,6 +371,22 @@
 				path.setAttribute('stroke', link.target.color)
 				path.setAttribute('stroke-width', 5)
 				path.setAttribute('fill', 'none');
+
+
+				const isCallType = link.enumType === 'call';
+				if (isCallType) {
+					path.setAttribute('stroke-dasharray', '10');
+					path.setAttribute('stroke-dashoffset', '0');
+
+					// Add animation element to the path for dashed lines
+					const animate = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
+					animate.setAttribute('attributeName', 'stroke-dashoffset');
+					animate.setAttribute('dur', '0.5s');
+					animate.setAttribute('repeatCount', 'indefinite');
+					animate.setAttribute('from', '20');
+					animate.setAttribute('to', '0');
+					path.appendChild(animate);
+				}
 
 				// 根据源点和终点的X坐标差异动态计算控制点的距离
 				let dist;
@@ -437,7 +571,8 @@
 					node: nodeId,
 					x: nodeX,
 					y: nodeY,
-					color: node.getAttribute('fill')
+					color: node.getAttribute('fill'),
+					enumType: node.enumType
 				},
 				target: null
 			};
@@ -496,6 +631,7 @@
 				// 确保目标节点不是起始节点自身，避免自连接
 				if (currentLink.source.node !== targetNodeId && sourceNode.enumType === targetNodeObj.enumType) {
 					validTargetFound = true;
+					currentLink.enumType = sourceNode.enumType;
 					// 更新连接的目标信息，并保存该连接
 					links.push({
 						...currentLink,
@@ -503,7 +639,8 @@
 							node: targetNodeId,
 							x: x,
 							y: y,
-							color: sourceNode.color
+							color: sourceNode.color,
+							enumType: sourceNode.enumType
 						}
 					});
 				}
@@ -553,92 +690,6 @@
 				node.addEventListener('mousedown', startDragLink);
 			});
 		}
-
-		function generateRandomCardsAndLinks() {
-			const enumTypes = ['TypeA', 'TypeB', 'TypeC', 'TypeD', 'TypeE'];
-
-			// 使用SVG容器的动态尺寸
-			const svgWidth = document.getElementById('svgContainer').clientWidth;
-			const svgHeight = document.getElementById('svgContainer').clientHeight;
-
-			// 清空现有的卡片和连接
-			cards = [];
-			links = [];
-
-			// 生成50个随机卡片
-			for (let i = 0; i < 50; i++) {
-				const x = Math.random() * (svgWidth - 150); // 确保卡片在SVG容器内
-				const y = Math.random() * (svgHeight - 100); // 留出足够的空间以避免卡片超出边界
-				const inCount = Math.floor(Math.random() * 4) + 1; // 生成1到4之间的随机in节点数量
-				const outCount = Math.floor(Math.random() * 5) + 1; // 生成1到5之间的随机out节点数量
-				const nodes = [];
-
-				// 添加in节点
-				for (let j = 0; j < inCount; j++) {
-					const randomEnumType = enumTypes[Math.floor(Math.random() * enumTypes.length)]; // 随机枚举类型
-					nodes.push({
-						type: "in",
-						level: j,
-						enumType: randomEnumType // 分配枚举类型
-					});
-				}
-
-				// 添加out节点
-				for (let j = 0; j < outCount; j++) {
-					const randomEnumType = enumTypes[Math.floor(Math.random() * enumTypes.length)]; // 随机枚举类型
-					nodes.push({
-						type: "out",
-						level: j,
-						enumType: randomEnumType // 分配枚举类型
-					});
-				}
-
-
-				cards.push({
-					id: `card${i}`,
-					x: x,
-					y: y,
-					label: `Card ${i}`,
-					nodes: nodes
-				});
-			}
-
-			// 随机连接卡片，仅连接out到in
-			cards.forEach((card, index) => {
-				card.nodes.filter(node => node.type === "out").forEach(node => {
-					let targetCard;
-					let targetNode;
-					do {
-						// 随机选择一个卡片和其in节点作为目标
-						const targetCardIndex = Math.floor(Math.random() * 50);
-						targetCard = cards[targetCardIndex];
-						const targetInNodes = targetCard.nodes.filter(node => node.type === "in");
-						if (targetInNodes.length > 0) {
-							// 随机选择一个in节点
-							targetNode = targetInNodes[Math.floor(Math.random() * targetInNodes.length)];
-						}
-					} while (targetCard === card || !targetNode); // 确保不自连接且目标卡片有in节点
-
-					links.push({
-						source: {
-							node: `${card.id}-node${node.level + 1}`,
-							x: card.x + 150,
-							y: card.y + 35
-						}, // 假定out节点位于卡片的右侧
-						target: {
-							node: `${targetCard.id}-node${targetNode.level + 1}`,
-							x: targetCard.x,
-							y: targetCard.y + 35
-						} // 假定in节点位于卡片的左侧
-					});
-				});
-			});
-
-			drawLinks();
-			drawCards();
-		}
-
-
 
 		init();
 	</script>
