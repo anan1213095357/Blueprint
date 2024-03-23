@@ -1,146 +1,270 @@
 <!DOCTYPE html>
 <html lang="zh-cn">
 
-<head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Blueprint</title>
-	<style>
-		body,
-		html {
-			margin: 0;
-			padding: 0;
-			width: 100%;
-			height: 100%;
-			overflow: hidden;
-		}
-
-		.grid-background {
-			background-color: #292929;
-			background-image:
-				linear-gradient(to right, black 1px, transparent 1px),
-				linear-gradient(to bottom, black 1px, transparent 1px),
-				linear-gradient(to right, #404040 1px, transparent 1px),
-				linear-gradient(to bottom, #404040 1px, transparent 1px);
-			background-size:
-				100px 100px,
-				100px 100px,
-				10px 10px,
-				10px 10px;
-			width: 100%;
-			height: 100%;
-		}
-
-		.draggable {
-			cursor: grab;
-		}
-
-		.node {
-
-			cursor: pointer;
-		}
-
-		.link {
-			stroke: black;
-			stroke-width: 2;
-		}
-
-		.card {
-			/* fill: lightgrey;
-			stroke: black; */
-			stroke-width: 1;
-			user-select: none;
-		}
-
-		text {
-			pointer-events: none;
-			user-select: none;
-		}
-	</style>
-</head>
-
-<body>
-
-	<svg style="width: 100%;height: 100%;" id="svgContainer" class="grid-background">
-		<g id="linksContainer"></g> <!-- 用于存放线条 -->
-		<g id="cardsContainer"></g> <!-- 用于存放卡片 -->
-	</svg>
-
-	<script>
-		let cards = [
-			{
-				id: 'card0',
-				x: 0,
-				y: 0,
-				label: 'Start',
-				type: "start",
-				nodes: [
-					{ type: "out", level: 0, enumType: 'call', color: '#fff' },
-				],
-				titleBarColor: ['#84fab0', '#8fd3f4']
-			},
-			{
-				id: 'card1',
-				x: 100,
-				y: 200,
-				label: 'Condition',
-				type: "condition",
-				nodes: [
-					{ type: "in", level: 0, enumType: 'call', color: '#fff' },
-					{ type: "in", level: 1, enumType: 'int', color: '#28C76F', slot: 'input', label: 'int' },
-					{ type: "in", level: 2, enumType: 'int', color: '#28C76F', slot: 'input', label: 'int' },
-					{ type: "out", level: 0, enumType: 'call', color: '#fff' },
-					{ type: "out", level: 1, enumType: 'bool', color: '#0396FF', label: 'bool' },
-				]
-				,
-				titleBarColor: ['#fccb90', '#d57eeb']
-			},
-			{
-				id: 'card2',
-				x: 300,
-				y: 400,
-				label: 'ToString',
-				type: "call",
-				nodes: [
-					{ type: "in", level: 0, enumType: 'call', color: '#fff' },
-					{ type: "in", level: 1, enumType: 'bool', color: '#0396FF', label: 'bool' },
-					{ type: "out", level: 0, enumType: 'call', color: '#fff' },
-					{ type: "out", level: 1, enumType: 'string', color: '#DE4313', label: 'string' }
-				],
-				titleBarColor: ['#3C8CE7', '#00EAFF']
-
-			},
-			{
-				id: 'card3',
-				x: 100,
-				y: 300,
-				label: 'Print',
-				type: "print",
-				nodes: [
-					{ type: "in", level: 0, enumType: 'call', color: '#fff' },
-					{ type: "in", level: 1, enumType: 'string', color: '#DE4313', label: 'string' }
-				],
-				titleBarColor: ['#f6d365', '#fda085']
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Blueprint</title>
+		<style>
+			body,
+			html {
+				margin: 0;
+				padding: 0;
+				width: 100%;
+				height: 100%;
+				overflow: hidden;
 			}
-		];
+
+			/* 弹窗容器样式 */
+			#card-creation-modal {
+				border: 1px solid #444;
+				/* 暗色边框 */
+				background: linear-gradient(145deg, #333, #555);
+				/* 暗色背景渐变 */
+				padding: 5px;
+				/* 减少内边距 */
+				z-index: 100;
+				box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+				/* 更明显的阴影效果 */
+				border-radius: 5px;
+				/* 圆角边框 */
+				overflow: hidden;
+				/* 隐藏溢出的子元素 */
+				margin: 0;
+				/* 消除边距 */
+			}
+
+			#card-type-list {
+
+				padding-left: 0px;
+			}
+
+			/* 列表项基础样式 */
+			#card-type-list li {
+				list-style: none;
+				/* 去除列表项目符号 */
+				padding: 8px 15px;
+				/* 减少垂直内边距使其更紧凑 */
+				border-bottom: 1px solid #666;
+				/* 暗色底部边框线 */
+				color: #ddd;
+				/* 暗色系字体颜色 */
+				cursor: pointer;
+				/* 鼠标指针样式 */
+				margin-left: 0;
+				/* 消除左边间隙 */
+
+			}
+
+			/* 列表项高亮样式 */
+			#card-type-list li:hover,
+			#card-type-list li:focus {
+				background-color: #777;
+				/* 暗色背景颜色 */
+				color: #fff;
+				/* 高亮字体颜色 */
+			}
+
+			/* 最后一个列表项的底部边框 */
+			#card-type-list li:last-child {
+				border-bottom: none;
+			}
+
+			.grid-background {
+				background-color: #292929;
+				background-image:
+					linear-gradient(to right, black 1px, transparent 1px),
+					linear-gradient(to bottom, black 1px, transparent 1px),
+					linear-gradient(to right, #404040 1px, transparent 1px),
+					linear-gradient(to bottom, #404040 1px, transparent 1px);
+				background-size:
+					100px 100px,
+					100px 100px,
+					10px 10px,
+					10px 10px;
+				width: 100%;
+				height: 100%;
+			}
+
+			.draggable {
+				cursor: grab;
+			}
+
+			.node {
+
+				cursor: pointer;
+			}
+
+			.link {
+				stroke: black;
+				stroke-width: 2;
+			}
+
+			.card {
+				/* fill: lightgrey;
+			stroke: black; */
+				stroke-width: 1;
+				user-select: none;
+			}
+
+			text {
+				pointer-events: none;
+				user-select: none;
+			}
+		</style>
+	</head>
+
+	<body>
+		<!-- 弹窗容器 -->
+		<div id="card-creation-modal"
+			style="display:none; position: absolute; border: 1px solid #ccc; background-color: #fff; padding: 10px; z-index: 100;">
+			<!-- 搜索结果列表 -->
+			<ul id="card-type-list"></ul>
+		</div>
 
 
-		let links = [];
-		let currentLink = null;
-		let isDragging = false;
-		let isLinking = false;
-		let dragOffsetX, dragOffsetY;
-		let currentCard;
 
-		function init() {
-			drawLinks();
-			drawCards();
-			attachEventListeners();
-		}
+		<svg style="width: 100%;height: 100%;" id="svgContainer" class="grid-background">
+			<g id="linksContainer"></g> <!-- 用于存放线条 -->
+			<g id="cardsContainer"></g> <!-- 用于存放卡片 -->
+		</svg>
 
-		function drawCards() {
-			const cardsContainer = document.getElementById('cardsContainer');
-			cardsContainer.innerHTML = ''; // 清除现有的卡片
+		<script>
+			let cards = [{
+					id: 'card0',
+					x: 0,
+					y: 0,
+					label: 'Start',
+					type: "start",
+					nodes: [{
+						type: "out",
+						level: 0,
+						enumType: 'call',
+						color: '#fff'
+					}, ],
+					titleBarColor: ['#84fab0', '#8fd3f4']
+				},
+				{
+					id: 'card1',
+					x: 100,
+					y: 200,
+					label: 'Condition',
+					type: "condition",
+					nodes: [{
+							type: "in",
+							level: 0,
+							enumType: 'call',
+							color: '#fff'
+						},
+						{
+							type: "in",
+							level: 1,
+							enumType: 'int',
+							color: '#28C76F',
+							slot: 'input',
+							label: 'int'
+						},
+						{
+							type: "in",
+							level: 2,
+							enumType: 'int',
+							color: '#28C76F',
+							slot: 'input',
+							label: 'int'
+						},
+						{
+							type: "out",
+							level: 0,
+							enumType: 'call',
+							color: '#fff'
+						},
+						{
+							type: "out",
+							level: 1,
+							enumType: 'bool',
+							color: '#0396FF',
+							label: 'bool'
+						},
+					],
+					titleBarColor: ['#fccb90', '#d57eeb']
+				},
+				{
+					id: 'card2',
+					x: 300,
+					y: 400,
+					label: 'ToString',
+					type: "call",
+					nodes: [{
+							type: "in",
+							level: 0,
+							enumType: 'call',
+							color: '#fff'
+						},
+						{
+							type: "in",
+							level: 1,
+							enumType: 'bool',
+							color: '#0396FF',
+							label: 'bool'
+						},
+						{
+							type: "out",
+							level: 0,
+							enumType: 'call',
+							color: '#fff'
+						},
+						{
+							type: "out",
+							level: 1,
+							enumType: 'string',
+							color: '#DE4313',
+							label: 'string'
+						}
+					],
+					titleBarColor: ['#3C8CE7', '#00EAFF']
+
+				},
+				{
+					id: 'card3',
+					x: 100,
+					y: 300,
+					label: 'Print',
+					type: "print",
+					nodes: [{
+							type: "in",
+							level: 0,
+							enumType: 'call',
+							color: '#fff'
+						},
+						{
+							type: "in",
+							level: 1,
+							enumType: 'string',
+							color: '#DE4313',
+							label: 'string'
+						}
+					],
+					titleBarColor: ['#f6d365', '#fda085']
+				}
+			];
+
+
+			let links = [];
+			let currentLink = null;
+			let isDragging = false;
+			let isLinking = false;
+			let dragOffsetX, dragOffsetY;
+			let currentCard;
+
+			function init() {
+				drawLinks();
+				drawCards();
+				attachEventListeners();
+			}
+
+			function drawCards() {
+				const cardsContainer = document.getElementById('cardsContainer');
+				cardsContainer.innerHTML = ''; // 清除现有的卡片
 
 
 
@@ -150,549 +274,648 @@
 
 
 
-			cards.forEach(card => {
+				cards.forEach(card => {
 
-				//创建标题栏渐变色
-				const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-				const linearGradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
-				linearGradient.setAttribute('id', `titleGradient-${card.id}`);
-				linearGradient.setAttribute('x1', '0%'); // 渐变起点的x坐标
-				linearGradient.setAttribute('y1', '100%'); // 渐变起点的y坐标
-				linearGradient.setAttribute('x2', '100%'); // 渐变终点的x坐标
-				linearGradient.setAttribute('y2', '0%'); // 渐变终点的y坐标
+					//创建标题栏渐变色
+					const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+					const linearGradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+					linearGradient.setAttribute('id', `titleGradient-${card.id}`);
+					linearGradient.setAttribute('x1', '0%'); // 渐变起点的x坐标
+					linearGradient.setAttribute('y1', '100%'); // 渐变起点的y坐标
+					linearGradient.setAttribute('x2', '100%'); // 渐变终点的x坐标
+					linearGradient.setAttribute('y2', '0%'); // 渐变终点的y坐标
 
-				const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
-				stop1.setAttribute('offset', '10%');
-				stop1.setAttribute('style', `stop-color: ${card.titleBarColor[0]}; stop-opacity: 1`);
-				linearGradient.appendChild(stop1);
+					const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+					stop1.setAttribute('offset', '10%');
+					stop1.setAttribute('style', `stop-color: ${card.titleBarColor[0]}; stop-opacity: 1`);
+					linearGradient.appendChild(stop1);
 
-				const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
-				stop2.setAttribute('offset', '100%');
-				stop2.setAttribute('style', `stop-color: ${card.titleBarColor[1]}; stop-opacity: 1`);
-				linearGradient.appendChild(stop2);
+					const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+					stop2.setAttribute('offset', '100%');
+					stop2.setAttribute('style', `stop-color: ${card.titleBarColor[1]}; stop-opacity: 1`);
+					linearGradient.appendChild(stop2);
 
-				defs.appendChild(linearGradient);
-				cardsContainer.appendChild(defs);
-
-
-
-				const nodeSpacing = 50;
-				const topBottomPadding = 20;
-				const titleBarHeight = 30; // 标题栏高度
-				const maxLevel = Math.max(...card.nodes.map(node => node.level)) + 1;
-				const cardHeight = maxLevel * nodeSpacing + topBottomPadding * 2 + titleBarHeight;
-
-				const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-				group.setAttribute('class', 'draggable card-container');
-				group.setAttribute('data-id', card.id);
-				group.setAttribute('user-select', 'none');
-				group.setAttribute('transform', `translate(${card.x},${card.y})`);
+					defs.appendChild(linearGradient);
+					cardsContainer.appendChild(defs);
 
 
 
+					const nodeSpacing = 50;
+					const topBottomPadding = 20;
+					const titleBarHeight = 30; // 标题栏高度
+					const maxLevel = Math.max(...card.nodes.map(node => node.level)) + 1;
+					const cardHeight = maxLevel * nodeSpacing + topBottomPadding * 2 + titleBarHeight;
+
+					const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+					group.setAttribute('class', 'draggable card-container');
+					group.setAttribute('data-id', card.id);
+					group.setAttribute('user-select', 'none');
+					group.setAttribute('transform', `translate(${card.x},${card.y})`);
 
 
-				const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-				rect.setAttribute('fill', '#222');
-				rect.setAttribute('width', 150);
-				rect.setAttribute('height', cardHeight);
-				rect.setAttribute('rx', 10); // 圆角
-				rect.setAttribute('ry', 10);
-				group.appendChild(rect);
 
-				// 使用path绘制带有指定圆角的矩形
-				// 创建标题栏
-				const titleBarWidth = 150;
-				const borderRadius = 10; // 圆角大小
-				const titleBar = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-				const dValue = `M 0,${borderRadius}
+
+
+					const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+					rect.setAttribute('fill', '#222');
+					rect.setAttribute('width', 150);
+					rect.setAttribute('height', cardHeight);
+					rect.setAttribute('rx', 10); // 圆角
+					rect.setAttribute('ry', 10);
+					group.appendChild(rect);
+
+					// 使用path绘制带有指定圆角的矩形
+					// 创建标题栏
+					const titleBarWidth = 150;
+					const borderRadius = 10; // 圆角大小
+					const titleBar = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+					const dValue = `M 0,${borderRadius}
                 a ${borderRadius},${borderRadius} 0 0 1 ${borderRadius},-${borderRadius}
                 h ${titleBarWidth - borderRadius * 2}
                 a ${borderRadius},${borderRadius} 0 0 1 ${borderRadius},${borderRadius}
                 v ${titleBarHeight - borderRadius}
                 h -${titleBarWidth}
                 z`;
-				titleBar.setAttribute('class', 'card');
-				titleBar.setAttribute('d', dValue);
-				titleBar.setAttribute('fill', `url(#titleGradient-${card.id})`);
-				group.appendChild(titleBar);
+					titleBar.setAttribute('class', 'card');
+					titleBar.setAttribute('d', dValue);
+					titleBar.setAttribute('fill', `url(#titleGradient-${card.id})`);
+					group.appendChild(titleBar);
 
-				const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-				text.setAttribute('x', titleBarWidth / 2);
-				text.setAttribute('y', titleBarHeight / 2);
-				text.setAttribute('text-anchor', 'middle');
-				text.setAttribute('alignment-baseline', 'middle');
-				text.textContent = card.label;
-				group.appendChild(text);
+					const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+					text.setAttribute('x', titleBarWidth / 2);
+					text.setAttribute('y', titleBarHeight / 2);
+					text.setAttribute('text-anchor', 'middle');
+					text.setAttribute('alignment-baseline', 'middle');
+					text.textContent = card.label;
+					group.appendChild(text);
 
-				card.nodes.forEach((node, index) => {
-
-
-					const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-					circle.setAttribute('class', 'node');
-					circle.setAttribute('cx', node.type === 'in' ? 0 : 150);
-					circle.setAttribute('cy', topBottomPadding + titleBarHeight + (node.level + 1) * nodeSpacing - (nodeSpacing / 2));
-					circle.setAttribute('r', 7);
-					circle.setAttribute('fill', node.color);
-					circle.setAttribute('data-card-id', card.id);
-					circle.setAttribute('data-node-id', `${card.id}-node${index + 1}`);
-					group.appendChild(circle);
+					card.nodes.forEach((node, index) => {
 
 
+						const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+						circle.setAttribute('class', 'node');
+						circle.setAttribute('cx', node.type === 'in' ? 0 : 150);
+						circle.setAttribute('cy', topBottomPadding + titleBarHeight + (node.level + 1) *
+							nodeSpacing - (nodeSpacing / 2));
+						circle.setAttribute('r', 7);
+						circle.setAttribute('fill', node.color);
+						circle.setAttribute('data-card-id', card.id);
+						circle.setAttribute('data-node-id', `${card.id}-node${index + 1}`);
+						group.appendChild(circle);
 
-					if (node.label != undefined) {
-						// 计算文本标签的位置
-						let labelX = node.type === 'in' ? 15 : 135; // 基本的X坐标
-						const labelY = topBottomPadding + titleBarHeight + node.level * nodeSpacing + 40;
 
-						// 创建SVG文本元素
-						const nodeLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-						nodeLabel.setAttribute('x', labelX);
-						nodeLabel.setAttribute('y', labelY); // 在节点下方留出一定空间
-						nodeLabel.setAttribute('text-anchor', 'middle'); // 文本居中对齐
-						nodeLabel.setAttribute('fill', '#aaa'); // 文本居中对齐
-						nodeLabel.setAttribute('alignment-baseline', 'hanging');
-						nodeLabel.textContent = node.label;
 
-						// 计算文本的宽度（假定的，因为SVG没有直接获取文本宽度的方法）
-						const estimatedTextLength = node.label.length * 10; // 估算每个字符6像素宽
+						if (node.label != undefined) {
+							// 计算文本标签的位置
+							let labelX = node.type === 'in' ? 15 : 135; // 基本的X坐标
+							const labelY = topBottomPadding + titleBarHeight + node.level * nodeSpacing + 40;
 
-						// 确保文本不会超出卡片右边界
-						if (labelX + estimatedTextLength / 2 > 150) {
-							labelX = 150 - estimatedTextLength / 2;
+							// 创建SVG文本元素
+							const nodeLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
 							nodeLabel.setAttribute('x', labelX);
+							nodeLabel.setAttribute('y', labelY); // 在节点下方留出一定空间
+							nodeLabel.setAttribute('text-anchor', 'middle'); // 文本居中对齐
+							nodeLabel.setAttribute('fill', '#aaa'); // 文本居中对齐
+							nodeLabel.setAttribute('alignment-baseline', 'hanging');
+							nodeLabel.textContent = node.label;
+
+							// 计算文本的宽度（假定的，因为SVG没有直接获取文本宽度的方法）
+							const estimatedTextLength = node.label.length * 10; // 估算每个字符6像素宽
+
+							// 确保文本不会超出卡片右边界
+							if (labelX + estimatedTextLength / 2 > 150) {
+								labelX = 150 - estimatedTextLength / 2;
+								nodeLabel.setAttribute('x', labelX);
+							}
+
+							// 确保文本不会超出卡片左边界
+							if (labelX - estimatedTextLength / 2 < 0) {
+								labelX = estimatedTextLength / 2;
+								nodeLabel.setAttribute('x', labelX);
+							}
+
+							group.appendChild(nodeLabel);
+
 						}
 
-						// 确保文本不会超出卡片左边界
-						if (labelX - estimatedTextLength / 2 < 0) {
-							labelX = estimatedTextLength / 2;
-							nodeLabel.setAttribute('x', labelX);
+						switch (node.slot) {
+							case 'input':
+								const foreignObject = document.createElementNS('http://www.w3.org/2000/svg',
+									'foreignObject');
+								foreignObject.setAttribute('x', 0);
+								foreignObject.setAttribute('y', topBottomPadding + titleBarHeight + node.level *
+									nodeSpacing + 12);
+								foreignObject.setAttribute('width', 130); // 保持原始宽度
+								foreignObject.setAttribute('height', nodeSpacing - 24); // 保持原始高度，减去的24像素为上下内边距之和
+								const input = document.createElement('input');
+								input.type = 'text';
+								input.value = node.value;
+								input.addEventListener('input', function() {
+									node.value = input.value;
+								});
+								// Set adjusted input styles
+								input.style.width = '110px';
+								input.style.height = '100%';
+								input.style.marginLeft = '20px';
+								input.style.borderRadius = '5px';
+								input.style.border = '1px solid white';
+								input.style.backgroundColor = '#222';
+								input.style.color = 'white';
+								input.style.fontSize = '1em';
+								input.style.padding = '0px'; // 可能需要调整或去除内边距以适应固定尺寸
+								input.style.boxSizing = 'border-box'; // 确保宽高包含内容、内边距和边框
+
+								// Change border color on focus and blur
+								input.addEventListener('focus', () => {
+									input.style.outline = 'none'; // Remove default focus outline
+									input.style.borderColor =
+										'white'; // Keep border color white on focus
+								});
+
+								input.addEventListener('blur', () => {
+									input.style.borderColor =
+										'white'; // Revert to white when not focused
+								});
+
+								// 阻止事件冒泡
+								input.addEventListener('click', function(event) {
+									event.stopPropagation();
+								});
+
+								input.addEventListener('mousedown', function(event) {
+									event.stopPropagation();
+								});
+
+								input.addEventListener('touchstart', function(event) {
+									event.stopPropagation();
+								});
+
+								foreignObject.appendChild(input);
+								group.appendChild(foreignObject);
+								break;
 						}
 
-						group.appendChild(nodeLabel);
-
-					}
-
-					switch (node.slot) {
-						case 'input':
-							const foreignObject = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
-							foreignObject.setAttribute('x', 0);
-							foreignObject.setAttribute('y', topBottomPadding + titleBarHeight + node.level * nodeSpacing + 12);
-							foreignObject.setAttribute('width', 130); // 保持原始宽度
-							foreignObject.setAttribute('height', nodeSpacing - 24); // 保持原始高度，减去的24像素为上下内边距之和
-							const input = document.createElement('input');
-							input.type = 'text';
-							input.value = node.value;
-							input.addEventListener('input', function () {
-								node.value = input.value;
-							});
-							// Set adjusted input styles
-							input.style.width = '110px';
-							input.style.height = '100%';
-							input.style.marginLeft = '20px';
-							input.style.borderRadius = '5px';
-							input.style.border = '1px solid white';
-							input.style.backgroundColor = '#222';
-							input.style.color = 'white';
-							input.style.fontSize = '1em';
-							input.style.padding = '0px'; // 可能需要调整或去除内边距以适应固定尺寸
-							input.style.boxSizing = 'border-box'; // 确保宽高包含内容、内边距和边框
-
-							// Change border color on focus and blur
-							input.addEventListener('focus', () => {
-								input.style.outline = 'none'; // Remove default focus outline
-								input.style.borderColor = 'white'; // Keep border color white on focus
-							});
-
-							input.addEventListener('blur', () => {
-								input.style.borderColor = 'white'; // Revert to white when not focused
-							});
-
-							// 阻止事件冒泡
-							input.addEventListener('click', function (event) {
-								event.stopPropagation();
-							});
-
-							input.addEventListener('mousedown', function (event) {
-								event.stopPropagation();
-							});
-
-							input.addEventListener('touchstart', function (event) {
-								event.stopPropagation();
-							});
-
-							foreignObject.appendChild(input);
-							group.appendChild(foreignObject);
-							break;
-					}
 
 
-
-				});
-
-				const deleteIcon = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-				deleteIcon.setAttribute('class', 'card-delete-icon');
-				deleteIcon.setAttribute('x', 125);
-				deleteIcon.setAttribute('y', 5); // 使其贴近标题栏的右上角
-				deleteIcon.setAttribute('width', 20);
-				deleteIcon.setAttribute('height', 20);
-				deleteIcon.setAttribute('fill', 'transparent');
-				deleteIcon.setAttribute('data-card-id', card.id);
-				deleteIcon.setAttribute('style', 'cursor: pointer;');
-				group.appendChild(deleteIcon);
-
-				const delText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-				delText.setAttribute('x', 135);
-				delText.setAttribute('y', 20); // 调整位置以垂直居中
-				delText.setAttribute('text-anchor', 'middle');
-				delText.setAttribute('fill', 'white');
-				delText.setAttribute('font-size', '16px'); // 适当调整字体大小以适应图标
-				delText.setAttribute('pointer-events', 'none'); // 确保点击事件只触发于删除图标上
-				delText.textContent = '×';
-				group.appendChild(delText);
-
-				cardsContainer.appendChild(group);
-			});
-
-			attachNodeEventListeners();
-		}
-
-
-
-		function drawLinks() {
-			const linksContainer = document.getElementById('linksContainer');
-			linksContainer.innerHTML = ''; // 清除现有的线条
-			// 清除旧的删除图标
-			document.querySelectorAll('.delete-icon').forEach(icon => icon.remove());
-
-			links.forEach((link, index) => {
-				const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-				//path.setAttribute('class', 'link');
-				path.setAttribute('stroke', link.target.color)
-				path.setAttribute('stroke-width', 5)
-				path.setAttribute('fill', 'none');
-
-
-				const isCallType = link.enumType === 'call';
-				if (isCallType) {
-					path.setAttribute('stroke-dasharray', '10');
-					path.setAttribute('stroke-dashoffset', '0');
-
-					// Add animation element to the path for dashed lines
-					const animate = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
-					animate.setAttribute('attributeName', 'stroke-dashoffset');
-					animate.setAttribute('dur', '0.5s');
-					animate.setAttribute('repeatCount', 'indefinite');
-					animate.setAttribute('from', '20');
-					animate.setAttribute('to', '0');
-					path.appendChild(animate);
-				}
-
-				// 根据源点和终点的X坐标差异动态计算控制点的距离
-				let dist;
-				if (link.source.x - link.target.x > 0) {
-					dist = 200; // 如果终点在源点的左侧，控制点距离更远
-				} else {
-					dist = Math.abs(link.target.x - link.source.x) * 0.3; // 否则，根据两点间的距离调整控制点距离
-				}
-
-				// 使用动态计算的控制点距离来定义曲线
-				const d =
-					`M${link.source.x} ${link.source.y} C${link.source.x + dist} ${link.source.y} ${link.target.x - dist} ${link.target.y} ${link.target.x} ${link.target.y}`;
-				path.setAttribute('d', d);
-				linksContainer.appendChild(path);
-
-				// 计算中点
-				const midX = (link.source.x + link.target.x) / 2;
-				const midY = (link.source.y + link.target.y) / 2;
-
-				// 绘制删除图标
-				const deleteIcon = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-				deleteIcon.setAttribute('class', 'delete-icon');
-				deleteIcon.setAttribute('cx', midX);
-				deleteIcon.setAttribute('cy', midY);
-				deleteIcon.setAttribute('style', "cursor: pointer;");
-				deleteIcon.setAttribute('r', 10);
-				deleteIcon.setAttribute('fill', 'red');
-				deleteIcon.setAttribute('data-link-level', index); // 用于标识该删除图标对应的线
-				linksContainer.appendChild(deleteIcon);
-
-				// 可以选择添加一个×文本在圆圈中间
-				const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-				text.setAttribute('x', midX);
-				text.setAttribute('y', midY + 5); // 轻微调整以垂直居中
-				text.setAttribute('text-anchor', 'middle');
-				text.setAttribute('fill', 'white');
-				text.setAttribute('font-size', '15px');
-				text.setAttribute('pointer-events', 'none'); // 确保点击事件只触发于圆圈上
-				text.textContent = '×';
-				linksContainer.appendChild(text);
-
-			});
-		}
-
-
-		function attachEventListeners() {
-			const svgContainer = document.getElementById('svgContainer');
-			document.querySelectorAll('.link').forEach(link => {
-				link.addEventListener('contextmenu', function (e) {
-					e.preventDefault(); // 阻止默认的右键菜单
-					const linkId = e.target.getAttribute('data-link-id'); // 确保你在绘制线条时添加了 data-link-id 属性
-					showContextMenu(e.clientX, e.clientY, linkId);
-				});
-			});
-			document.getElementById('svgContainer').addEventListener('click', function (e) {
-				if (e.target.classList.contains('delete-icon')) {
-					// 获取点击的删除图标对应的线的索引
-					const linkIndex = e.target.getAttribute('data-link-level');
-					// 从数组中移除该线
-					links.splice(linkIndex, 1);
-					// 重新绘制剩余的线和删除图标
-					drawLinks();
-					drawCards(); // 如果你的线条与卡片有关联，可能需要重新绘制卡片以更新视图
-				} else if (e.target.classList.contains('card-delete-icon')) {
-					// 获取点击的删除图标对应的卡片ID
-					const cardId = e.target.getAttribute('data-card-id');
-					// 从`cards`数组中移除对应的卡片
-					cards = cards.filter(card => card.id !== cardId);
-					// 同时移除所有与该卡片连接的线
-					links = links.filter(link => !(link.source.node.startsWith(cardId) || (link.target && link.target
-						.node.startsWith(cardId))));
-					// 重新绘制卡片和线
-					drawLinks();
-					drawCards();
-				} else {
-					let targetCardContainer = e.target.closest('.card-container');
-					if (targetCardContainer) {
-						const cardId = targetCardContainer.getAttribute('data-id');
-						// 将SVG元素移动到最后，使其在视觉上显示在最前面
-						targetCardContainer.parentNode.appendChild(targetCardContainer);
-
-						// 更新cards数组，将点击的卡片移动到数组的末尾
-						const cardIndex = cards.findIndex(card => card.id === cardId);
-						if (cardIndex > -1) {
-							const card = cards.splice(cardIndex, 1)[0];
-							cards.push(card);
-						}
-
-						// 这里不需要立即调用drawCards或drawLinks，
-						// 除非你需要根据cards数组的新顺序进行其他更新
-					}
-				}
-			});
-
-
-			svgContainer.addEventListener('mousedown', e => {
-				const target = e.target;
-				if (target
-
-					.classList.contains('card') || target.tagName === 'text') {
-					const cardContainer = target.closest('.card-container');
-					const cardId = cardContainer.getAttribute('data-id');
-					startDragCard(e, cardId);
-				}
-			});
-			document.addEventListener('mousemove', e => {
-				if (isDragging) {
-					moveCard(e);
-				} else if (isLinking && currentLink) {
-					updateLink(e);
-				}
-			});
-
-			document.addEventListener('mouseup', e => {
-				if (isDragging) {
-					endDragCard();
-				} else if (isLinking) {
-					endDragLink(e);
-				}
-			});
-		}
-
-		function startDragCard(e, cardId) {
-			isDragging = true;
-			const card = cards.find(c => c.id === cardId);
-			currentCard = card;
-
-			const svgRect = svgContainer.getBoundingClientRect();
-			dragOffsetX = e.clientX - svgRect.left - card.x;
-			dragOffsetY = e.clientY - svgRect.top - card.y;
-		}
-
-		function moveCard(e) {
-			const svgRect = svgContainer.getBoundingClientRect();
-			currentCard.x = e.clientX - svgRect.left - dragOffsetX;
-			currentCard.y = e.clientY - svgRect.top - dragOffsetY;
-
-			// Update link positions associated with the currentCard
-			links.forEach(link => {
-				if (link.source.node.startsWith(currentCard.id)) {
-					// 根据节点ID更新链接的源位置
-					const nodeIndex = parseInt(link.source.node.split('-node')[1]) - 1;
-					const nodeConfig = currentCard.nodes[nodeIndex]; // 获取当前节点的配置
-					const nodeSpacing = 50; // 节点间隔，应与drawCards函数中使用的相同
-					const topBottomPadding = 20; // 顶部和底部的边距，应与drawCards函数中使用的相同
-					link.source.x = currentCard.x + (nodeConfig.type === "in" ? 0 : 150); // 根据节点类型调整x坐标
-					link.source.y = 30 + currentCard.y + topBottomPadding + (nodeConfig.level + 1) * nodeSpacing - (nodeSpacing / 2); // 根据节点的index调整y坐标
-				}
-				if (link.target && link.target.node.startsWith(currentCard.id)) {
-					// 根据节点ID更新链接的目标位置
-					const nodeIndex = parseInt(link.target.node.split('-node')[1]) - 1;
-					const nodeConfig = currentCard.nodes[nodeIndex]; // 获取当前节点的配置
-					link.target.x = currentCard.x + (nodeConfig.type === "in" ? 0 : 150); // 根据节点类型调整x坐标
-					link.target.y = 30 + currentCard.y + 20 + (nodeConfig.level + 1) * 50 - (50 / 2); // 根据节点的index调整y坐标
-				}
-			});
-
-			drawLinks(); // Redraw links to reflect updated positions
-			drawCards(); // Redraw cards and nodes
-		}
-
-
-
-		function endDragCard() {
-			isDragging = false;
-		}
-
-		function startDragLink(e) {
-			e.stopPropagation(); // Prevent card drag
-			isLinking = true;
-			const nodeId = e.target.getAttribute('data-node-id');
-			const cardId = e.target.getAttribute('data-card-id');
-			const card = cards.find(c => c.id === cardId);
-			const node = e.target;
-
-			const svgRect = svgContainer.getBoundingClientRect();
-			const nodeX = e.clientX - svgRect.left;
-			const nodeY = e.clientY - svgRect.top;
-
-			currentLink = {
-				source: {
-					node: nodeId,
-					x: nodeX,
-					y: nodeY,
-					color: node.getAttribute('fill'),
-					enumType: node.enumType
-				},
-				target: null
-			};
-		}
-
-		function updateLink(e) {
-			const svgRect = svgContainer.getBoundingClientRect();
-			currentLink.target = {
-				x: e.clientX - svgRect.left,
-				y: e.clientY - svgRect.top
-			};
-			drawCurrentLink();
-		}
-
-		function endDragLink(e) {
-			isLinking = false;
-			const svgRect = svgContainer.getBoundingClientRect();
-			const x = e.clientX - svgRect.left;
-			const y = e.clientY - svgRect.top;
-
-			// 默认情况下，假设目标节点就是e.target
-			let targetNode = e.target;
-
-			// 检查e.target是否是我们期望的节点类型，如果不是，则尝试使用document.elementFromPoint
-			if (!targetNode.classList.contains('node')) {
-				// Temporarily hide the link to perform hit testing for the underlying node
-				e.target.style.display = 'none';
-
-				// Now attempt to find a target node at the same position
-				targetNode = document.elementFromPoint(e.clientX, e.clientY);
-
-				// Make sure to restore the visibility of the link after the test
-				e.target.style.display = '';
-			}
-
-			let validTargetFound = false;
-
-			// 进行节点的有效性判断
-			if (targetNode && targetNode.classList.contains('node')) {
-				const sourceNodeId = currentLink.source.node;
-				const targetNodeId = targetNode.getAttribute('data-node-id');
-
-				// 从节点ID分解出卡片ID和节点索引
-				const sourceNodeParts = sourceNodeId.split('-node');
-				const targetNodeParts = targetNodeId.split('-node');
-				const sourceCard = cards.find(card => card.id === sourceNodeParts[0]);
-				const targetCard = cards.find(card => card.id === targetNodeParts[0]);
-
-				// 根据节点ID找到对应的节点对象
-				const sourceNodeIndex = parseInt(sourceNodeParts[1]) - 1; // 假设节点索引是从1开始的
-				const targetNodeIndex = parseInt(targetNodeParts[1]) - 1;
-				const sourceNode = sourceCard.nodes[sourceNodeIndex];
-				const targetNodeObj = targetCard.nodes[targetNodeIndex];
-
-
-				// 确保目标节点不是起始节点自身，避免自连接
-				if (currentLink.source.node !== targetNodeId && sourceNode.enumType === targetNodeObj.enumType) {
-					validTargetFound = true;
-					currentLink.enumType = sourceNode.enumType;
-					// 更新连接的目标信息，并保存该连接
-					links.push({
-						...currentLink,
-						target: {
-							node: targetNodeId,
-							x: x,
-							y: y,
-							color: sourceNode.color,
-							enumType: sourceNode.enumType
-						}
 					});
+
+					const deleteIcon = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+					deleteIcon.setAttribute('class', 'card-delete-icon');
+					deleteIcon.setAttribute('x', 125);
+					deleteIcon.setAttribute('y', 5); // 使其贴近标题栏的右上角
+					deleteIcon.setAttribute('width', 20);
+					deleteIcon.setAttribute('height', 20);
+					deleteIcon.setAttribute('fill', 'transparent');
+					deleteIcon.setAttribute('data-card-id', card.id);
+					deleteIcon.setAttribute('style', 'cursor: pointer;');
+					group.appendChild(deleteIcon);
+
+					const delText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+					delText.setAttribute('x', 135);
+					delText.setAttribute('y', 20); // 调整位置以垂直居中
+					delText.setAttribute('text-anchor', 'middle');
+					delText.setAttribute('fill', 'white');
+					delText.setAttribute('font-size', '16px'); // 适当调整字体大小以适应图标
+					delText.setAttribute('pointer-events', 'none'); // 确保点击事件只触发于删除图标上
+					delText.textContent = '×';
+					group.appendChild(delText);
+
+					cardsContainer.appendChild(group);
+				});
+
+				attachNodeEventListeners();
+			}
+
+
+
+			function drawLinks() {
+				const linksContainer = document.getElementById('linksContainer');
+				linksContainer.innerHTML = ''; // 清除现有的线条
+				// 清除旧的删除图标
+				document.querySelectorAll('.delete-icon').forEach(icon => icon.remove());
+
+				links.forEach((link, index) => {
+					const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+					//path.setAttribute('class', 'link');
+					path.setAttribute('stroke', link.target.color)
+					path.setAttribute('stroke-width', 5)
+					path.setAttribute('fill', 'none');
+
+
+					const isCallType = link.source.enumType === 'call';
+					if (isCallType) {
+						path.setAttribute('stroke-dasharray', '10');
+						path.setAttribute('stroke-dashoffset', '0');
+
+						// Add animation element to the path for dashed lines
+						const animate = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
+						animate.setAttribute('attributeName', 'stroke-dashoffset');
+						animate.setAttribute('dur', '0.5s');
+						animate.setAttribute('repeatCount', 'indefinite');
+						animate.setAttribute('from', '20');
+						animate.setAttribute('to', '0');
+						path.appendChild(animate);
+					}
+
+					// 根据源点和终点的X坐标差异动态计算控制点的距离
+					let dist;
+					if (link.source.x - link.target.x > 0) {
+						dist = 200; // 如果终点在源点的左侧，控制点距离更远
+					} else {
+						dist = Math.abs(link.target.x - link.source.x) * 0.3; // 否则，根据两点间的距离调整控制点距离
+					}
+
+					// 使用动态计算的控制点距离来定义曲线
+					const d =
+						`M${link.source.x} ${link.source.y} C${link.source.x + dist} ${link.source.y} ${link.target.x - dist} ${link.target.y} ${link.target.x} ${link.target.y}`;
+					path.setAttribute('d', d);
+					linksContainer.appendChild(path);
+
+					// 计算中点
+					const midX = (link.source.x + link.target.x) / 2;
+					const midY = (link.source.y + link.target.y) / 2;
+
+					// 绘制删除图标
+					const deleteIcon = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+					deleteIcon.setAttribute('class', 'delete-icon');
+					deleteIcon.setAttribute('cx', midX);
+					deleteIcon.setAttribute('cy', midY);
+					deleteIcon.setAttribute('style', "cursor: pointer;");
+					deleteIcon.setAttribute('r', 10);
+					deleteIcon.setAttribute('fill', 'red');
+					deleteIcon.setAttribute('data-link-level', index); // 用于标识该删除图标对应的线
+					linksContainer.appendChild(deleteIcon);
+
+					// 可以选择添加一个×文本在圆圈中间
+					const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+					text.setAttribute('x', midX);
+					text.setAttribute('y', midY + 5); // 轻微调整以垂直居中
+					text.setAttribute('text-anchor', 'middle');
+					text.setAttribute('fill', 'white');
+					text.setAttribute('font-size', '15px');
+					text.setAttribute('pointer-events', 'none'); // 确保点击事件只触发于圆圈上
+					text.textContent = '×';
+					linksContainer.appendChild(text);
+
+				});
+			}
+
+
+			function attachEventListeners() {
+				const svgContainer = document.getElementById('svgContainer');
+				document.querySelectorAll('.link').forEach(link => {
+					link.addEventListener('contextmenu', function(e) {
+						e.preventDefault(); // 阻止默认的右键菜单
+						const linkId = e.target.getAttribute('data-link-id'); // 确保你在绘制线条时添加了 data-link-id 属性
+						showContextMenu(e.clientX, e.clientY, linkId);
+					});
+				});
+				document.getElementById('svgContainer').addEventListener('click', function(e) {
+					if (e.target.classList.contains('delete-icon')) {
+						// 获取点击的删除图标对应的线的索引
+						const linkIndex = e.target.getAttribute('data-link-level');
+						// 从数组中移除该线
+						links.splice(linkIndex, 1);
+						// 重新绘制剩余的线和删除图标
+						drawLinks();
+						drawCards(); // 如果你的线条与卡片有关联，可能需要重新绘制卡片以更新视图
+					} else if (e.target.classList.contains('card-delete-icon')) {
+						// 获取点击的删除图标对应的卡片ID
+						const cardId = e.target.getAttribute('data-card-id');
+						// 从`cards`数组中移除对应的卡片
+						cards = cards.filter(card => card.id !== cardId);
+						// 同时移除所有与该卡片连接的线
+						links = links.filter(link => !(link.source.node.startsWith(cardId) || (link.target && link.target
+							.node.startsWith(cardId))));
+						// 重新绘制卡片和线
+						drawLinks();
+						drawCards();
+					} else {
+						let targetCardContainer = e.target.closest('.card-container');
+						if (targetCardContainer) {
+							const cardId = targetCardContainer.getAttribute('data-id');
+							// 将SVG元素移动到最后，使其在视觉上显示在最前面
+							targetCardContainer.parentNode.appendChild(targetCardContainer);
+
+							// 更新cards数组，将点击的卡片移动到数组的末尾
+							const cardIndex = cards.findIndex(card => card.id === cardId);
+							if (cardIndex > -1) {
+								const card = cards.splice(cardIndex, 1)[0];
+								cards.push(card);
+							}
+
+							// 这里不需要立即调用drawCards或drawLinks，
+							// 除非你需要根据cards数组的新顺序进行其他更新
+						}
+					}
+				});
+
+
+				svgContainer.addEventListener('mousedown', e => {
+					const target = e.target;
+					if (target
+
+						.classList.contains('card') || target.tagName === 'text') {
+						const cardContainer = target.closest('.card-container');
+						const cardId = cardContainer.getAttribute('data-id');
+						startDragCard(e, cardId);
+					}
+				});
+				document.addEventListener('mousemove', e => {
+					if (isDragging) {
+						moveCard(e);
+					} else if (isLinking && currentLink) {
+						updateLink(e);
+					}
+				});
+
+				document.addEventListener('mouseup', e => {
+					if (isDragging) {
+						endDragCard();
+					} else if (isLinking) {
+						endDragLink(e);
+					}
+				});
+			}
+
+			function startDragCard(e, cardId) {
+				isDragging = true;
+				const card = cards.find(c => c.id === cardId);
+				currentCard = card;
+
+				const svgRect = svgContainer.getBoundingClientRect();
+				dragOffsetX = e.clientX - svgRect.left - card.x;
+				dragOffsetY = e.clientY - svgRect.top - card.y;
+			}
+
+			function moveCard(e) {
+				const svgRect = svgContainer.getBoundingClientRect();
+				currentCard.x = e.clientX - svgRect.left - dragOffsetX;
+				currentCard.y = e.clientY - svgRect.top - dragOffsetY;
+
+				// Update link positions associated with the currentCard
+				links.forEach(link => {
+					if (link.source.node.startsWith(currentCard.id)) {
+						// 根据节点ID更新链接的源位置
+						const nodeIndex = parseInt(link.source.node.split('-node')[1]) - 1;
+						const nodeConfig = currentCard.nodes[nodeIndex]; // 获取当前节点的配置
+						const nodeSpacing = 50; // 节点间隔，应与drawCards函数中使用的相同
+						const topBottomPadding = 20; // 顶部和底部的边距，应与drawCards函数中使用的相同
+						link.source.x = currentCard.x + (nodeConfig.type === "in" ? 0 : 150); // 根据节点类型调整x坐标
+						link.source.y = 30 + currentCard.y + topBottomPadding + (nodeConfig.level + 1) * nodeSpacing - (
+							nodeSpacing / 2); // 根据节点的index调整y坐标
+					}
+					if (link.target && link.target.node.startsWith(currentCard.id)) {
+						// 根据节点ID更新链接的目标位置
+						const nodeIndex = parseInt(link.target.node.split('-node')[1]) - 1;
+						const nodeConfig = currentCard.nodes[nodeIndex]; // 获取当前节点的配置
+						link.target.x = currentCard.x + (nodeConfig.type === "in" ? 0 : 150); // 根据节点类型调整x坐标
+						link.target.y = 30 + currentCard.y + 20 + (nodeConfig.level + 1) * 50 - (50 /
+							2); // 根据节点的index调整y坐标
+					}
+				});
+
+				drawLinks(); // Redraw links to reflect updated positions
+				drawCards(); // Redraw cards and nodes
+			}
+
+
+
+			function endDragCard() {
+				isDragging = false;
+			}
+
+			function startDragLink(e) {
+				e.stopPropagation(); // Prevent card drag
+				isLinking = true;
+				const nodeId = e.target.getAttribute('data-node-id');
+				const cardId = e.target.getAttribute('data-card-id');
+				const card = cards.find(c => c.id === cardId);
+				const node = e.target;
+
+				const svgRect = svgContainer.getBoundingClientRect();
+				const nodeX = e.clientX - svgRect.left;
+				const nodeY = e.clientY - svgRect.top;
+
+				currentLink = {
+					source: {
+						node: nodeId,
+						x: nodeX,
+						y: nodeY,
+						color: node.getAttribute('fill'),
+						enumType: node.enumType
+					},
+					target: null
+				};
+			}
+
+			function updateLink(e) {
+				const svgRect = svgContainer.getBoundingClientRect();
+				currentLink.target = {
+					x: e.clientX - svgRect.left,
+					y: e.clientY - svgRect.top
+				};
+				drawCurrentLink();
+			}
+
+			function endDragLink(e) {
+				isLinking = false;
+				const svgRect = svgContainer.getBoundingClientRect();
+				const x = e.clientX - svgRect.left;
+				const y = e.clientY - svgRect.top;
+
+				// 默认情况下，假设目标节点就是e.target
+				let targetNode = e.target;
+
+				// 检查e.target是否是我们期望的节点类型，如果不是，则尝试使用document.elementFromPoint
+				if (!targetNode.classList.contains('node')) {
+					// Temporarily hide the link to perform hit testing for the underlying node
+					e.target.style.display = 'none';
+
+					// Now attempt to find a target node at the same position
+					targetNode = document.elementFromPoint(e.clientX, e.clientY);
+
+					// Make sure to restore the visibility of the link after the test
+					e.target.style.display = '';
 				}
+
+				let validTargetFound = false;
+
+				// 进行节点的有效性判断
+				if (targetNode && targetNode.classList.contains('node')) {
+					const sourceNodeId = currentLink.source.node;
+					const targetNodeId = targetNode.getAttribute('data-node-id');
+
+					// 从节点ID分解出卡片ID和节点索引
+					const sourceNodeParts = sourceNodeId.split('-node');
+					const targetNodeParts = targetNodeId.split('-node');
+					const sourceCard = cards.find(card => card.id === sourceNodeParts[0]);
+					const targetCard = cards.find(card => card.id === targetNodeParts[0]);
+
+					// 根据节点ID找到对应的节点对象
+					const sourceNodeIndex = parseInt(sourceNodeParts[1]) - 1;
+					const targetNodeIndex = parseInt(targetNodeParts[1]) - 1;
+					const sourceNode = sourceCard.nodes[sourceNodeIndex];
+					const targetNodeObj = targetCard.nodes[targetNodeIndex];
+
+
+					// 确保目标节点不是起始节点自身，避免自连接
+					if (currentLink.source.node !== targetNodeId && sourceNode.enumType === targetNodeObj.enumType) {
+						validTargetFound = true;
+						currentLink.source.enumType = sourceNode.enumType;
+						// 更新连接的目标信息，并保存该连接
+						links.push({
+							...currentLink,
+							target: {
+								node: targetNodeId,
+								x: x,
+								y: y,
+								color: sourceNode.color,
+								enumType: sourceNode.enumType
+							}
+						});
+					}
+				} else {
+					const sourceNodeId = currentLink.source.node;
+					const sourceNodeParts = sourceNodeId.split('-node');
+					const sourceCard = cards.find(card => card.id === sourceNodeParts[0]);
+					const sourceNodeIndex = parseInt(sourceNodeParts[1]) - 1;
+					const sourceNode = sourceCard.nodes[sourceNodeIndex];
+					currentLink.source.enumType = sourceNode.enumType;
+					showCardCreationModal(e.clientX, e.clientY, currentLink.source);
+
+				}
+
+				// 移除临时绘制的连接线
+				const tempLink = document.querySelector('.temp-link');
+				if (tempLink) {
+					tempLink.remove();
+				}
+
+				// 重置当前连接
+				currentLink = null;
+
+				// 重新绘制所有有效连接
+				drawLinks();
 			}
 
-			// 移除临时绘制的连接线
-			const tempLink = document.querySelector('.temp-link');
-			if (tempLink) {
-				tempLink.remove();
+
+
+
+
+
+			// 更新drawCurrentLink函数，增加线宽
+			function drawCurrentLink() {
+				const tempLink = document.querySelector('.temp-link');
+				if (tempLink) tempLink.remove();
+
+				if (!currentLink || !currentLink.target) return;
+
+				const svgContainer = document.getElementById('svgContainer');
+				const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+				path.setAttribute('class', 'temp-link');
+				// 设置等宽线属性
+				path.setAttribute('stroke', currentLink.source.color)
+				path.setAttribute('stroke-width', 5)
+
+				path.setAttribute('fill', 'none');
+				const d =
+					`M${currentLink.source.x},${currentLink.source.y} C${currentLink.source.x + 100},${currentLink.source.y} ${currentLink.target.x - 100},${currentLink.target.y} ${currentLink.target.x},${currentLink.target.y}`;
+				path.setAttribute('d', d);
+				svgContainer.appendChild(path);
 			}
 
-			// 重置当前连接
-			currentLink = null;
+			function attachNodeEventListeners() {
+				document.querySelectorAll('.node').forEach(node => {
+					node.addEventListener('mousedown', startDragLink);
+				});
+			}
 
-			// 重新绘制所有有效连接
-			drawLinks();
-		}
+			function populateCardTypeList(mouseX, mouseY, sourceNode) {
+				const listElement = document.getElementById('card-type-list');
+				listElement.innerHTML = ''; // 清空现有列表项
+				const addedTypes = new Set();
+
+				cards.forEach(card => {
+					if (!addedTypes.has(card.type)) {
+						const listItem = document.createElement('li');
+						listItem.tabIndex = 0; // 使元素能够获得焦点，以便能够监听键盘事件
+						listItem.textContent = card.label; // 使用卡片的标签或类型
+						listItem.onclick = function() {
+							createNewCard(card, mouseX, mouseY, sourceNode);
+							hideCardCreationModal(); // 新建卡片后隐藏模态框
+						};
+						listItem.onkeydown = function(event) {
+							if (event.key === 'Enter') {
+								createNewCard(card, mouseX, mouseY, sourceNode);
+								hideCardCreationModal(); // 新建卡片后隐藏模态框
+							}
+						};
+						listElement.appendChild(listItem);
+						addedTypes.add(card.type);
+					}
+				});
+			}
+
+
+			function showCardCreationModal(mouseX, mouseY, sourceNode) {
+				populateCardTypeList(mouseX, mouseY, sourceNode); // 填充卡片类型列表
+				const modal = document.getElementById('card-creation-modal');
+				// 在这里添加取消按钮
+				const cancelButton = document.createElement('button');
+				cancelButton.textContent = '取消';
+				cancelButton.onclick = function() {
+					hideCardCreationModal();
+				};
+				modal.appendChild(cancelButton);
+
+				// 设置弹出框的位置
+				modal.style.left = mouseX + 'px';
+				modal.style.top = mouseY + 'px';
+				modal.style.display = 'block'; // 显示弹窗
+			}
+
+			function createNewCard(cardTemplate, mouseX, mouseY, sourceNode) {
+				const newCard = {
+					...cardTemplate,
+					id: 'card' + (cards.length + 1)
+				};
+				newCard.x = mouseX - 75; // 调整为鼠标中心
+				newCard.y = mouseY - 15; // 调整为鼠标中心
+
+				cards.push(newCard); // 将新创建的卡片添加到卡片列表中
+
+				// 如果提供了sourceNode，找到新卡片的合适target node并创建连接
+				if (sourceNode) {
+					let targetNode = newCard.nodes.find(node => node.enumType === sourceNode.enumType && node.type === 'in');
+					if (targetNode) {
+						links.push({
+							source: sourceNode,
+							target: {
+								node: `${newCard.id}-node${newCard.nodes.indexOf(targetNode) + 1}`,
+								x: newCard.x + (targetNode.type === 'in' ? 0 : 150),
+								y: newCard.y + 30 + 20 + (targetNode.level + 1) * 50 - 25,
+								color: targetNode.color,
+								enumType: targetNode.enumType
+							}
+						});
+					}
+				}
+
+
+				drawLinks();
+				drawCards();
+			}
 
 
 
+			function hideCardCreationModal() {
+				const modal = document.getElementById('card-creation-modal');
+				modal.style.display = 'none'; // 隐藏弹窗
+			}
 
-
-
-		// 更新drawCurrentLink函数，增加线宽
-		function drawCurrentLink() {
-			const tempLink = document.querySelector('.temp-link');
-			if (tempLink) tempLink.remove();
-
-			if (!currentLink || !currentLink.target) return;
-
-			const svgContainer = document.getElementById('svgContainer');
-			const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-			path.setAttribute('class', 'temp-link');
-			// 设置等宽线属性
-			path.setAttribute('stroke', currentLink.source.color)
-			path.setAttribute('stroke-width', 5)
-
-			path.setAttribute('fill', 'none');
-			const d =
-				`M${currentLink.source.x},${currentLink.source.y} C${currentLink.source.x + 100},${currentLink.source.y} ${currentLink.target.x - 100},${currentLink.target.y} ${currentLink.target.x},${currentLink.target.y}`;
-			path.setAttribute('d', d);
-			svgContainer.appendChild(path);
-		}
-
-		function attachNodeEventListeners() {
-			document.querySelectorAll('.node').forEach(node => {
-				node.addEventListener('mousedown', startDragLink);
-			});
-		}
-
-		init();
-	</script>
-</body>
+			init();
+		</script>
+	</body>
 
 </html>
