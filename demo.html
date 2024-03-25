@@ -602,8 +602,21 @@
 				});
 			}
 
+			// 定义变量来追踪是否正在拖动以及拖动的起始位置
+			let isPanning = false;
+			let startPan = {
+				x: 0,
+				y: 0
+			};
+
+			// 用于调整SVG视图窗口的变量
+			let currentPan = {
+				x: 0,
+				y: 0
+			};
 
 			function attachEventListeners() {
+
 				const svgContainer = document.getElementById('svgContainer');
 				document.querySelectorAll('.link').forEach(link => {
 					link.addEventListener('contextmenu', function(e) {
@@ -652,10 +665,20 @@
 					}
 				});
 
+				svgContainer.addEventListener('contextmenu', function(e) {
+					e.preventDefault(); // 阻止右键菜单
+				});
 
 				svgContainer.addEventListener('mousedown', e => {
+
+					// 检查是否是鼠标右键点击
+
 					const target = e.target;
-					if (target
+					if (e.button === 2) {
+						isPanning = true;
+						startPan.x = e.clientX - currentPan.x;
+						startPan.y = e.clientY - currentPan.y;
+					} else if (target
 
 						.classList.contains('card') || target.tagName === 'text') {
 						const cardContainer = target.closest('.card-container');
@@ -664,7 +687,18 @@
 					}
 				});
 				document.addEventListener('mousemove', e => {
-					if (isDragging) {
+					if (isPanning) {
+						// 正确计算新的视图窗口位置
+						currentPan.x = e.clientX - startPan.x;
+						currentPan.y = e.clientY - startPan.y;
+
+						// 正确调整SVG的viewBox来实现拖动效果
+						// 这里需要更新的是开始拖动的点，而不是当前的点，因此我们反向更新
+						svgContainer.setAttribute('viewBox',
+							`${-currentPan.x} ${-currentPan.y} ${svgContainer.clientWidth} ${svgContainer.clientHeight}`
+						);
+						svgContainer.style.backgroundPosition = `${currentPan.x % 100}px ${currentPan.y % 100}px`;
+					} else if (isDragging) {
 						moveCard(e);
 					} else if (isLinking && currentLink) {
 						updateLink(e);
@@ -672,7 +706,10 @@
 				});
 
 				document.addEventListener('mouseup', e => {
-					if (isDragging) {
+					if (e.button === 2) {
+						console.log(currentPan);
+						isPanning = false;
+					} else if (isDragging) {
 						endDragCard();
 					} else if (isLinking) {
 						endDragLink(e);
@@ -833,13 +870,15 @@
 					if (currentLink.source.node !== targetNodeId && sourceNode.enumType === targetNodeObj.enumType) {
 						validTargetFound = true;
 						currentLink.source.enumType = sourceNode.enumType;
+						currentLink.source.x = currentLink.source.x - currentPan.x;
+						currentLink.source.y = currentLink.source.y - currentPan.y;
 						// 更新连接的目标信息，并保存该连接
 						links.push({
 							...currentLink,
 							target: {
 								node: targetNodeId,
-								x: x,
-								y: y,
+								x: x - currentPan.x,
+								y: y - currentPan.y,
 								color: sourceNode.color,
 								enumType: sourceNode.enumType
 							}
@@ -870,6 +909,7 @@
 
 
 			// 更新drawCurrentLink函数，增加线宽
+			// 更新drawCurrentLink函数，增加线宽
 			function drawCurrentLink() {
 				const tempLink = document.querySelector('.temp-link');
 				if (tempLink) tempLink.remove();
@@ -880,24 +920,28 @@
 				const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
 				path.setAttribute('class', 'temp-link');
 				// 设置等宽线属性
-				path.setAttribute('stroke', currentLink.source.color)
-				path.setAttribute('stroke-width', 5)
-
+				path.setAttribute('stroke', currentLink.source.color);
+				path.setAttribute('stroke-width', 5);
 				path.setAttribute('fill', 'none');
+
+				// 计算考虑了平移偏移的起点和终点
+				const adjustedSourceX = currentLink.source.x - currentPan.x;
+				const adjustedSourceY = currentLink.source.y - currentPan.y;
+				const adjustedTargetX = currentLink.target.x - currentPan.x;
+				const adjustedTargetY = currentLink.target.y - currentPan.y;
+
+				// 更新路径以使用调整后的坐标
 				if (currentLink.source.type === 'out') {
 					const d =
-						`M${currentLink.source.x},${currentLink.source.y} C${currentLink.source.x + 100},${currentLink.source.y} ${currentLink.target.x - 100},${currentLink.target.y} ${currentLink.target.x},${currentLink.target.y}`;
+						`M${adjustedSourceX},${adjustedSourceY} C${adjustedSourceX + 100},${adjustedSourceY} ${adjustedTargetX - 100},${adjustedTargetY} ${adjustedTargetX},${adjustedTargetY}`;
 					path.setAttribute('d', d);
-					svgContainer.appendChild(path);
 				} else {
 					const d =
-						`M${currentLink.source.x},${currentLink.source.y} C${currentLink.source.x - 100},${currentLink.source.y} ${currentLink.target.x + 100},${currentLink.target.y} ${currentLink.target.x},${currentLink.target.y}`;
+						`M${adjustedSourceX},${adjustedSourceY} C${adjustedSourceX - 100},${adjustedSourceY} ${adjustedTargetX + 100},${adjustedTargetY} ${adjustedTargetX},${adjustedTargetY}`;
 					path.setAttribute('d', d);
-					svgContainer.appendChild(path);
-
 				}
 
-
+				svgContainer.appendChild(path);
 			}
 
 			function attachNodeEventListeners() {
