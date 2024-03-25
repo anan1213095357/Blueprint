@@ -18,20 +18,14 @@
 			/* 弹窗容器样式 */
 			#card-creation-modal {
 				border: 1px solid #444;
-				/* 暗色边框 */
 				background: linear-gradient(145deg, #333, #555);
-				/* 暗色背景渐变 */
 				padding: 5px;
-				/* 减少内边距 */
 				z-index: 100;
 				box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-				/* 更明显的阴影效果 */
 				border-radius: 5px;
-				/* 圆角边框 */
 				overflow: hidden;
-				/* 隐藏溢出的子元素 */
 				margin: 0;
-				/* 消除边距 */
+				user-select: none;
 			}
 
 			#card-type-list {
@@ -103,6 +97,7 @@
 			.card {
 				/* fill: lightgrey;
 			stroke: black; */
+
 				stroke-width: 1;
 				user-select: none;
 			}
@@ -140,7 +135,8 @@
 						type: "out",
 						level: 0,
 						enumType: 'call',
-						color: '#fff'
+						color: '#fff',
+						multiConnected: 1
 					}, ],
 					titleBarColor: ['#84fab0', '#8fd3f4']
 				},
@@ -266,14 +262,6 @@
 				const cardsContainer = document.getElementById('cardsContainer');
 				cardsContainer.innerHTML = ''; // 清除现有的卡片
 
-
-
-
-
-
-
-
-
 				cards.forEach(card => {
 
 					//创建标题栏渐变色
@@ -312,13 +300,10 @@
 					group.setAttribute('user-select', 'none');
 					group.setAttribute('transform', `translate(${card.x},${card.y})`);
 
-
-
-
-
 					const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
 					rect.setAttribute('fill', '#222');
 					rect.setAttribute('width', 150);
+					rect.setAttribute('style', 'cursor: auto;');
 					rect.setAttribute('height', cardHeight);
 					rect.setAttribute('rx', 10); // 圆角
 					rect.setAttribute('ry', 10);
@@ -409,6 +394,9 @@
 								foreignObject.setAttribute('height', nodeSpacing - 24); // 保持原始高度，减去的24像素为上下内边距之和
 								const input = document.createElement('input');
 								input.type = 'text';
+								if (node.value == undefined) {
+									node.value = '';
+								}
 								input.value = node.value;
 								input.addEventListener('input', function() {
 									node.value = input.value;
@@ -862,12 +850,17 @@
 				populateCardTypeList(mouseX, mouseY, sourceNode); // 填充卡片类型列表
 				const modal = document.getElementById('card-creation-modal');
 				// 在这里添加取消按钮
-				const cancelButton = document.createElement('button');
-				cancelButton.textContent = '取消';
-				cancelButton.onclick = function() {
-					hideCardCreationModal();
-				};
-				modal.appendChild(cancelButton);
+				if (!document.getElementById('cancel-btn')) {
+					const cancelButton = document.createElement('button');
+					cancelButton.id = 'cancel-btn';
+					cancelButton.textContent = '取消';
+					cancelButton.onclick = function() {
+						hideCardCreationModal();
+					};
+					modal.appendChild(cancelButton);
+				}
+
+
 
 				// 设置弹出框的位置
 				modal.style.left = mouseX + 'px';
@@ -878,11 +871,15 @@
 			function createNewCard(cardTemplate, mouseX, mouseY, sourceNode) {
 				const newCard = {
 					...cardTemplate,
+					nodes: JSON.parse(JSON.stringify(cardTemplate.nodes)), // 深拷贝nodes属性
 					id: 'card' + (cards.length + 1)
 				};
+				// 将每个node的value设置为空字符串
+				newCard.nodes.forEach(node => {
+					node.value = '';
+				});
 				newCard.x = mouseX - 75; // 调整为鼠标中心
 				newCard.y = mouseY - 15; // 调整为鼠标中心
-
 				cards.push(newCard); // 将新创建的卡片添加到卡片列表中
 
 				// 如果提供了sourceNode，找到新卡片的合适target node并创建连接
