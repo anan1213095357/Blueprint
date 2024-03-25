@@ -1009,12 +1009,14 @@
 				newCard.nodes.forEach(node => {
 					node.value = '';
 				});
-				newCard.x = mouseX - 75; // 调整为鼠标中心
-				newCard.y = mouseY - 15; // 调整为鼠标中心
+				newCard.x = mouseX - 75 - currentPan.x; // 调整为鼠标中心
+				newCard.y = mouseY - 15 - currentPan.y; // 调整为鼠标中心
 				cards.push(newCard); // 将新创建的卡片添加到卡片列表中
 
 				// 如果提供了sourceNode，找到新卡片的合适target node并创建连接
 				if (sourceNode) {
+					sourceNode.x -= currentPan.x;
+					sourceNode.y -= currentPan.y;
 					let targetNode = newCard.nodes.find(node => node.enumType === sourceNode.enumType && node.type === 'in');
 					if (targetNode) {
 						links.push({
