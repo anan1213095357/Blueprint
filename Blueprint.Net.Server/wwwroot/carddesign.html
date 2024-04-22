@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Card Editor</title>
+
+
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+
+        .json-output {
+            background-color: #f4f4f4;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-top: 20px;
+        }
+
+        input, select, button {
+            padding: 8px;
+            margin-top: 5px;
+            width: 100%;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        svg {
+            background-color: #333;
+            border: 1px solid #ccc;
+            padding: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Card Editor</h1>
+        <form id="cardForm">
+            <label for="id">Card ID:</label>
+            <input type="text" id="id" name="id" required>
+
+            <label for="label">Label:</label>
+            <input type="text" id="label" name="label" required>
+
+            <label for="type">Type:</label>
+            <input type="text" id="type" name="type" required>
+
+            <label for="titleBarColor">Title Bar Color (comma-separated):</label>
+            <input type="text" id="titleBarColor" name="titleBarColor" required>
+
+            <h3>Nodes</h3>
+            <div id="nodesContainer">
+                <!-- Node inputs will be added here -->
+            </div>
+            <button type="button" onclick="addNode()">Add Node</button>
+            <button type="submit">Update Card JSON</button>
+        </form>
+
+        <div class="json-output" id="jsonOutput"></div>
+
+        <!-- SVG container for drawing the card -->
+        <svg id="svgContainer" width="200" height="300"></svg>
+    </div>
+
+    <script>
+        let card = {
+            id: 'card0',
+            x: 0,
+            y: 0,
+            label: 'Start',
+            type: "start",
+            nodes: [{
+                type: "out",
+                level: 0,
+                label: 'call',
+                enumType: 'call',
+                color: '#fff',
+                multiConnected: 1
+            }],
+            titleBarColor: ['#84fab0', '#8fd3f4']
+        };
+
+        function updateForm() {
+            document.getElementById('id').value = card.id;
+            document.getElementById('label').value = card.label;
+            document.getElementById('type').value = card.type;
+            document.getElementById('titleBarColor').value = card.titleBarColor.join(', ');
+
+            const nodesContainer = document.getElementById('nodesContainer');
+            nodesContainer.innerHTML = '';
+            card.nodes.forEach((node, index) => {
+                addNode(node, index);
+            });
+        }
+
+        function addNode(node = {}, index = card.nodes.length) {
+            const container = document.createElement('div');
+            container.innerHTML = `
+                <label>Node ${index + 1}</label>
+                <select name="nodeType-${index}">
+                    <option value="in" ${node.type === 'in' ? 'selected' : ''}>In</option>
+                    <option value="out" ${node.type === 'out' ? 'selected' : ''}>Out</option>
+                </select>
+                <input type="number" placeholder="Level" value="${node.level || 0}" name="nodeLevel-${index}">
+                <input type="text" placeholder="Enum Type" value="${node.enumType || ''}" name="nodeEnumType-${index}">
+                <input type="text" placeholder="Label" value="${node.label || ''}" name="nodeLabel-${index}">
+                <input type="text" placeholder="Color" value="${node.color || ''}" name="nodeColor-${index}">
+                <input type="number" placeholder="Multi Connected" value="${node.multiConnected || 0}" name="nodeMultiConnected-${index}">
+                <button type="button" onclick="removeNode(${index})">Remove Node</button>
+            `;
+            document.getElementById('nodesContainer').appendChild(container);
+        }
+
+        function removeNode(index) {
+            card.nodes.splice(index, 1);
+            updateForm(); // Refresh the form and JSON output
+            drawCard();
+        }
+
+        document.getElementById('cardForm').onsubmit = function (event) {
+            event.preventDefault();
+            card.id = document.getElementById('id').value;
+            card.label = document.getElementById('label').value;
+            card.type = document.getElementById('type').value;
+            card.titleBarColor = document.getElementById('titleBarColor').value.split(',').map(color => color.trim());
+
+            card.nodes = [];
+            const nodes = document.querySelectorAll('#nodesContainer > div');
+            nodes.forEach((node, index) => {
+                card.nodes.push({
+                    type: document.querySelector(`[name="nodeType-${index}"]`).value,
+                    level: parseInt(document.querySelector(`[name="nodeLevel-${index}"]`).value),
+                    enumType: document.querySelector(`[name="nodeEnumType-${index}"]`).value,
+                    label: document.querySelector(`[name="nodeLabel-${index}"]`).value,
+                    color: document.querySelector(`[name="nodeColor-${index}"]`).value,
+                    multiConnected: parseInt(document.querySelector(`[name="nodeMultiConnected-${index}"]`).value)
+                });
+            });
+
+            updateJSONOutput();
+            drawCard();
+        };
+
+        function updateJSONOutput() {
+            document.getElementById('jsonOutput').textContent = JSON.stringify(card, null, 2);
+        }
+
+        function drawCard() {
+            const cardsContainer = document.getElementById('svgContainer');
+            cardsContainer.innerHTML = ''; // 清除现有的卡片
+
+            //创建标题栏渐变色
+            const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+            const linearGradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+            linearGradient.setAttribute('id', `titleGradient-${card.id}`);
+            linearGradient.setAttribute('x1', '0%'); // 渐变起点的x坐标
+            linearGradient.setAttribute('y1', '100%'); // 渐变起点的y坐标
+            linearGradient.setAttribute('x2', '100%'); // 渐变终点的x坐标
+            linearGradient.setAttribute('y2', '0%'); // 渐变终点的y坐标
+
+            const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+            stop1.setAttribute('offset', '10%');
+            stop1.setAttribute('style', `stop-color: ${card.titleBarColor[0]}; stop-opacity: 1`);
+            linearGradient.appendChild(stop1);
+
+            const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+            stop2.setAttribute('offset', '100%');
+            stop2.setAttribute('style', `stop-color: ${card.titleBarColor[1]}; stop-opacity: 1`);
+            linearGradient.appendChild(stop2);
+
+            defs.appendChild(linearGradient);
+            cardsContainer.appendChild(defs);
+
+
+
+            const nodeSpacing = 50;
+            const topBottomPadding = 20;
+            const titleBarHeight = 30; // 标题栏高度
+            const maxLevel = Math.max(...card.nodes.map(node => node.level)) + 1;
+            const cardHeight = maxLevel * nodeSpacing + topBottomPadding * 2 + titleBarHeight;
+
+            const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            group.setAttribute('class', 'draggable card-container');
+            group.setAttribute('data-id', card.id);
+            group.setAttribute('user-select', 'none');
+            group.setAttribute('transform', `translate(${card.x},${card.y})`);
+
+            const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            rect.setAttribute('fill', '#222');
+            rect.setAttribute('width', 150);
+            rect.setAttribute('style', 'cursor: auto;');
+            rect.setAttribute('height', cardHeight);
+            rect.setAttribute('rx', 10); // 圆角
+            rect.setAttribute('ry', 10);
+            group.appendChild(rect);
+
+            // 使用path绘制带有指定圆角的矩形
+            // 创建标题栏
+            const titleBarWidth = 150;
+            const borderRadius = 10; // 圆角大小
+            const titleBar = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            const dValue = `M 0,${borderRadius}
+a ${borderRadius},${borderRadius} 0 0 1 ${borderRadius},-${borderRadius}
+h ${titleBarWidth - borderRadius * 2}
+a ${borderRadius},${borderRadius} 0 0 1 ${borderRadius},${borderRadius}
+v ${titleBarHeight - borderRadius}
+h -${titleBarWidth}
+z`;
+            titleBar.setAttribute('class', 'card');
+            titleBar.setAttribute('d', dValue);
+            titleBar.setAttribute('fill', `url(#titleGradient-${card.id})`);
+            group.appendChild(titleBar);
+
+            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text.setAttribute('x', titleBarWidth / 2);
+            text.setAttribute('y', titleBarHeight / 2);
+            text.setAttribute('text-anchor', 'middle');
+            text.setAttribute('alignment-baseline', 'middle');
+            text.textContent = card.label;
+            group.appendChild(text);
+
+            card.nodes.forEach((node, index) => {
+
+
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('class', 'node');
+                circle.setAttribute('cx', node.type === 'in' ? 0 : 150);
+                circle.setAttribute('cy', topBottomPadding + titleBarHeight + (node.level + 1) *
+                    nodeSpacing - (nodeSpacing / 2));
+                circle.setAttribute('r', 7);
+                circle.setAttribute('fill', node.color);
+                circle.setAttribute('data-card-id', card.id);
+                circle.setAttribute('data-node-id', `${card.id}-node${index + 1}`);
+                group.appendChild(circle);
+
+                let labelX = node.type === 'in' ? 12 : 138; // 基本的X坐标
+                const labelY = topBottomPadding + titleBarHeight + node.level * nodeSpacing + 21;
+
+                // 创建SVG文本元素
+                const multiConnectedLabel = document.createElementNS('http://www.w3.org/2000/svg',
+                    'text');
+                multiConnectedLabel.setAttribute('x', labelX);
+                multiConnectedLabel.setAttribute('y', labelY);
+                multiConnectedLabel.setAttribute('text-anchor', 'middle');
+                multiConnectedLabel.setAttribute('fill', '#aaa');
+                multiConnectedLabel.setAttribute('style', 'font-size: 8px;');
+                multiConnectedLabel.setAttribute('alignment-baseline', 'hanging');
+
+
+                // 计算文本的宽度（假定的，因为SVG没有直接获取文本宽度的方法）
+                let estimatedTextLength;
+                if (node.multiConnected == undefined) {
+                    estimatedTextLength = 20
+                    multiConnectedLabel.textContent = 'N';
+                } else {
+                    estimatedTextLength = node.multiConnected.length;
+                    multiConnectedLabel.textContent = node.multiConnected;
+                }
+
+                // 确保文本不会超出卡片右边界
+                if (labelX + estimatedTextLength / 2 > 150) {
+                    labelX = 150 - estimatedTextLength / 2;
+                    nodeLabel.setAttribute('x', labelX);
+                }
+
+                // 确保文本不会超出卡片左边界
+                if (labelX - estimatedTextLength / 2 < 0) {
+                    labelX = estimatedTextLength / 2;
+                    nodeLabel.setAttribute('x', labelX);
+                }
+
+                group.appendChild(multiConnectedLabel);
+
+                if (node.label != undefined) {
+                    // 计算文本标签的位置
+                    let labelX = node.type === 'in' ? 15 : 135; // 基本的X坐标
+                    const labelY = topBottomPadding + titleBarHeight + node.level * nodeSpacing + 40;
+
+                    // 创建SVG文本元素
+                    const nodeLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    nodeLabel.setAttribute('x', labelX);
+                    nodeLabel.setAttribute('y', labelY); // 在节点下方留出一定空间
+                    nodeLabel.setAttribute('text-anchor', 'middle'); // 文本居中对齐
+                    nodeLabel.setAttribute('fill', '#aaa'); // 文本居中对齐
+                    nodeLabel.setAttribute('alignment-baseline', 'hanging');
+                    nodeLabel.textContent = node.label;
+
+                    // 计算文本的宽度（假定的，因为SVG没有直接获取文本宽度的方法）
+                    const estimatedTextLength = node.label.length * 10; // 估算每个字符6像素宽
+
+                    // 确保文本不会超出卡片右边界
+                    if (labelX + estimatedTextLength / 2 > 150) {
+                        labelX = 150 - estimatedTextLength / 2;
+                        nodeLabel.setAttribute('x', labelX);
+                    }
+
+                    // 确保文本不会超出卡片左边界
+                    if (labelX - estimatedTextLength / 2 < 0) {
+                        labelX = estimatedTextLength / 2;
+                        nodeLabel.setAttribute('x', labelX);
+                    }
+
+                    group.appendChild(nodeLabel);
+
+                }
+
+                switch (node.slot) {
+                    case 'input':
+                        const foreignObject = document.createElementNS('http://www.w3.org/2000/svg',
+                            'foreignObject');
+                        foreignObject.setAttribute('x', 0);
+                        foreignObject.setAttribute('y', topBottomPadding + titleBarHeight + node.level *
+                            nodeSpacing + 12);
+                        foreignObject.setAttribute('width', 130); // 保持原始宽度
+                        foreignObject.setAttribute('height', nodeSpacing - 24); // 保持原始高度，减去的24像素为上下内边距之和
+                        const input = document.createElement('input');
+                        input.type = 'text';
+                        if (node.value == undefined) {
+                            node.value = '';
+                        }
+                        input.value = node.value;
+                        input.addEventListener('input', function () {
+                            node.value = input.value;
+                        });
+                        // Set adjusted input styles
+                        input.style.width = '110px';
+                        input.style.height = '100%';
+                        input.style.marginLeft = '20px';
+                        input.style.borderRadius = '5px';
+                        input.style.border = '1px solid white';
+                        input.style.backgroundColor = '#222';
+                        input.style.color = 'white';
+                        input.style.fontSize = '1em';
+                        input.style.padding = '0px'; // 可能需要调整或去除内边距以适应固定尺寸
+                        input.style.boxSizing = 'border-box'; // 确保宽高包含内容、内边距和边框
+
+                        // Change border color on focus and blur
+                        input.addEventListener('focus', () => {
+                            input.style.outline = 'none'; // Remove default focus outline
+                            input.style.borderColor =
+                                'white'; // Keep border color white on focus
+                        });
+
+                        input.addEventListener('blur', () => {
+                            input.style.borderColor =
+                                'white'; // Revert to white when not focused
+                        });
+
+                        // 阻止事件冒泡
+                        input.addEventListener('click', function (event) {
+                            event.stopPropagation();
+                        });
+
+                        input.addEventListener('mousedown', function (event) {
+                            event.stopPropagation();
+                        });
+
+                        input.addEventListener('touchstart', function (event) {
+                            event.stopPropagation();
+                        });
+
+                        foreignObject.appendChild(input);
+                        group.appendChild(foreignObject);
+                        break;
+                }
+
+
+
+            });
+
+            const deleteIcon = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            deleteIcon.setAttribute('class', 'card-delete-icon');
+            deleteIcon.setAttribute('x', 125);
+            deleteIcon.setAttribute('y', 5); // 使其贴近标题栏的右上角
+            deleteIcon.setAttribute('width', 20);
+            deleteIcon.setAttribute('height', 20);
+            deleteIcon.setAttribute('fill', 'transparent');
+            deleteIcon.setAttribute('data-card-id', card.id);
+            deleteIcon.setAttribute('style', 'cursor: pointer;');
+            group.appendChild(deleteIcon);
+
+            const delText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            delText.setAttribute('x', 135);
+            delText.setAttribute('y', 20); // 调整位置以垂直居中
+            delText.setAttribute('text-anchor', 'middle');
+            delText.setAttribute('fill', 'white');
+            delText.setAttribute('font-size', '16px'); // 适当调整字体大小以适应图标
+            delText.setAttribute('pointer-events', 'none'); // 确保点击事件只触发于删除图标上
+            delText.textContent = '×';
+            group.appendChild(delText);
+
+            cardsContainer.appendChild(group);
+
+            attachNodeEventListeners();
+        }
+
+
+
+
+
+        updateForm();
+        updateJSONOutput();
+        drawCard();
+    </script>
+</body>
+</html>
