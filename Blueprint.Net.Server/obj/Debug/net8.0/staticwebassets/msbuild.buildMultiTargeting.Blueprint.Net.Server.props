@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="..\build\Blueprint.Net.Server.props" />
+</Project>

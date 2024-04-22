@@ -1,0 +1,39 @@
+{
+  "Version": 1,
+  "Hash": "Pejh5880OWDtzUDeaYI0R3uZI5plIRGeOY+LIYo1sp8=",
+  "Source": "Blueprint.Net.Server",
+  "BasePath": "_content/Blueprint.Net.Server",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [
+    {
+      "Name": "Blueprint.Net.Server\\wwwroot",
+      "Source": "Blueprint.Net.Server",
+      "ContentRoot": "E:\\Code\\Blueprint\\Blueprint.Net.Server\\wwwroot\\",
+      "BasePath": "_content/Blueprint.Net.Server",
+      "Pattern": "**"
+    }
+  ],
+  "Assets": [
+    {
+      "Identity": "E:\\Code\\Blueprint\\Blueprint.Net.Server\\wwwroot\\index.html",
+      "SourceId": "Blueprint.Net.Server",
+      "SourceType": "Discovered",
+      "ContentRoot": "E:\\Code\\Blueprint\\Blueprint.Net.Server\\wwwroot\\",
+      "BasePath": "_content/Blueprint.Net.Server",
+      "RelativePath": "index.html",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "PreferTarget",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot\\index.html"
+    }
+  ]
+}

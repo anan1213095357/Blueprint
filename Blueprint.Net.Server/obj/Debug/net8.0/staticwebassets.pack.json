@@ -1,0 +1,25 @@
+{
+  "Files": [
+    {
+      "Id": "E:\\Code\\Blueprint\\Blueprint.Net.Server\\wwwroot\\index.html",
+      "PackagePath": "staticwebassets\\index.html"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.Blueprint.Net.Server.Microsoft.AspNetCore.StaticWebAssets.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.build.Blueprint.Net.Server.props",
+      "PackagePath": "build\\Blueprint.Net.Server.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildMultiTargeting.Blueprint.Net.Server.props",
+      "PackagePath": "buildMultiTargeting\\Blueprint.Net.Server.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildTransitive.Blueprint.Net.Server.props",
+      "PackagePath": "buildTransitive\\Blueprint.Net.Server.props"
+    }
+  ],
+  "ElementsToRemove": []
+}

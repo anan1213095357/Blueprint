@@ -1,0 +1,112 @@
+[
+  {
+    "ContainingType": "Blueprint.Net.Server.Controllers.BlueprintController",
+    "Method": "DeleteCard",
+    "RelativePath": "Blueprint/DeleteCard/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int64",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blueprint.Net.Server.Controllers.BlueprintController",
+    "Method": "DeleteLink",
+    "RelativePath": "Blueprint/DeleteLink/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int64",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blueprint.Net.Server.Controllers.BlueprintController",
+    "Method": "DeleteProject",
+    "RelativePath": "Blueprint/DeleteProject/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int64",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blueprint.Net.Server.Controllers.BlueprintController",
+    "Method": "DeleteWorkspace",
+    "RelativePath": "Blueprint/DeleteWorkspace/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int64",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blueprint.Net.Server.Controllers.BlueprintController",
+    "Method": "GetProjects",
+    "RelativePath": "Blueprint/GetProjects",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[Blueprint.Net.Server.Project, Blueprint.Net.Server, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "Blueprint.Net.Server.Controllers.BlueprintController",
+    "Method": "Project",
+    "RelativePath": "Blueprint/Project",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "project",
+        "Type": "Blueprint.Net.Server.Project",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "Blueprint.Net.Server.Project",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  }
+]

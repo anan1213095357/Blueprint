@@ -1,0 +1,96 @@
+{
+  "format": 1,
+  "restore": {
+    "E:\\Code\\Blueprint\\Blueprint.Net.Server\\Blueprint.Net.Server.csproj": {}
+  },
+  "projects": {
+    "E:\\Code\\Blueprint\\Blueprint.Net.Server\\Blueprint.Net.Server.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "E:\\Code\\Blueprint\\Blueprint.Net.Server\\Blueprint.Net.Server.csproj",
+        "projectName": "Blueprint.Net.Server",
+        "projectPath": "E:\\Code\\Blueprint\\Blueprint.Net.Server\\Blueprint.Net.Server.csproj",
+        "packagesPath": "C:\\Users\\anan\\.nuget\\packages\\",
+        "outputPath": "E:\\Code\\Blueprint\\Blueprint.Net.Server\\obj\\",
+        "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Users\\anan\\AppData\\Roaming\\Godot\\mono\\GodotNuGetFallbackFolder",
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
+        "configFilePaths": [
+          "C:\\Users\\anan\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\anan\\AppData\\Roaming\\NuGet\\config\\Godot.Offline.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net8.0"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net8.0": {
+            "targetAlias": "net8.0",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        }
+      },
+      "frameworks": {
+        "net8.0": {
+          "targetAlias": "net8.0",
+          "dependencies": {
+            "FreeSql": {
+              "target": "Package",
+              "version": "[3.2.821, )"
+            },
+            "FreeSql.Provider.Sqlite": {
+              "target": "Package",
+              "version": "[3.2.821, )"
+            },
+            "FreeSql.Repository": {
+              "target": "Package",
+              "version": "[3.2.821, )"
+            },
+            "Swashbuckle.AspNetCore": {
+              "target": "Package",
+              "version": "[6.4.0, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.AspNetCore.App": {
+              "privateAssets": "none"
+            },
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.201/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}

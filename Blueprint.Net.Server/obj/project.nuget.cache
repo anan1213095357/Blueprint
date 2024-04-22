@@ -1,0 +1,23 @@
+{
+  "version": 2,
+  "dgSpecHash": "DA7OQW1R/bNe9e6/SrjHTvIq5zA0jn0hwqi81cixrmZ4iGKP5aTwTMcL2WpK4pbrz1wFsABnWSUlUdTKp7LCLw==",
+  "success": true,
+  "projectFilePath": "E:\\Code\\Blueprint\\Blueprint.Net.Server\\Blueprint.Net.Server.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\anan\\.nuget\\packages\\freesql\\3.2.821\\freesql.3.2.821.nupkg.sha512",
+    "C:\\Users\\anan\\.nuget\\packages\\freesql.dbcontext\\3.2.821\\freesql.dbcontext.3.2.821.nupkg.sha512",
+    "C:\\Users\\anan\\.nuget\\packages\\freesql.provider.sqlite\\3.2.821\\freesql.provider.sqlite.3.2.821.nupkg.sha512",
+    "C:\\Users\\anan\\.nuget\\packages\\freesql.repository\\3.2.821\\freesql.repository.3.2.821.nupkg.sha512",
+    "C:\\Users\\anan\\.nuget\\packages\\microsoft.extensions.apidescription.server\\6.0.5\\microsoft.extensions.apidescription.server.6.0.5.nupkg.sha512",
+    "C:\\Users\\anan\\.nuget\\packages\\microsoft.extensions.dependencyinjection\\8.0.0\\microsoft.extensions.dependencyinjection.8.0.0.nupkg.sha512",
+    "C:\\Users\\anan\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\8.0.0\\microsoft.extensions.dependencyinjection.abstractions.8.0.0.nupkg.sha512",
+    "C:\\Users\\anan\\.nuget\\packages\\microsoft.openapi\\1.2.3\\microsoft.openapi.1.2.3.nupkg.sha512",
+    "C:\\Users\\anan\\.nuget\\packages\\stub.system.data.sqlite.core.netstandard\\1.0.115.5\\stub.system.data.sqlite.core.netstandard.1.0.115.5.nupkg.sha512",
+    "C:\\Users\\anan\\.nuget\\packages\\swashbuckle.aspnetcore\\6.4.0\\swashbuckle.aspnetcore.6.4.0.nupkg.sha512",
+    "C:\\Users\\anan\\.nuget\\packages\\swashbuckle.aspnetcore.swagger\\6.4.0\\swashbuckle.aspnetcore.swagger.6.4.0.nupkg.sha512",
+    "C:\\Users\\anan\\.nuget\\packages\\swashbuckle.aspnetcore.swaggergen\\6.4.0\\swashbuckle.aspnetcore.swaggergen.6.4.0.nupkg.sha512",
+    "C:\\Users\\anan\\.nuget\\packages\\swashbuckle.aspnetcore.swaggerui\\6.4.0\\swashbuckle.aspnetcore.swaggerui.6.4.0.nupkg.sha512",
+    "C:\\Users\\anan\\.nuget\\packages\\system.data.sqlite.core\\1.0.115.5\\system.data.sqlite.core.1.0.115.5.nupkg.sha512"
+  ],
+  "logs": []
+}
