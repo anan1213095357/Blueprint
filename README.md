@@ -26,7 +26,7 @@ Whether you're a developer looking to sketch out the architecture of your next a
 
 ## ✨ Key Features
 
-我们致力于提供流畅且强大的绘图体验：
+We are committed to providing a smooth and powerful drawing experience：
 
 ### 🎨 **Interactive SVG Elements**
 Leverage the power of SVG to create responsive and attractive diagrams. Our tool supports a wide range of SVG elements, including cards, links, and customizable nodes, all with sleek animations and gradients.
@@ -43,15 +43,6 @@ Utilize a sophisticated grid layout with adjustable snapping points for precisio
 ### 🖱️ **Seamless User Interaction**
 Our user interface is crafted for efficiency and ease of use, featuring drag-and-drop functionality, context menus, and a variety of input options to streamline the diagramming process.
 
----
-
-## 🚀 See It In Action
-
-体验流畅的交互和动态效果：
-
-<div align="center">
-  <img src="https://github.com/anan1213095357/Blueprint/assets/43770875/83dfd442-3293-42e8-93d9-26b8f876716b" alt="Blueprint Demo GIF" width="85%">
-</div>
 
 ---
 
